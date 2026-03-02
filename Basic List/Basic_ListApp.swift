@@ -6,12 +6,23 @@
 //
 
 import SwiftUI
+import AppIntents
 
 @main
 struct Basic_ListApp: App {
+    @State private var store = TodoStore.shared
+
+    init() {
+        BasicListShortcutsProvider.updateAppShortcutParameters()
+        TodoStore.shared.purgeOldArchivedItems()
+    }
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(store: store)
+                .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+                    store.reload()
+                }
         }
     }
 }
