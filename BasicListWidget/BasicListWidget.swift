@@ -13,6 +13,7 @@ struct TodoEntry: TimelineEntry {
     let date: Date
     let items: [TodoItem]
     let listName: String
+    let listID: UUID
 }
 
 struct TodoProvider: AppIntentTimelineProvider {
@@ -24,27 +25,44 @@ struct TodoProvider: AppIntentTimelineProvider {
             TodoItem(title: "Sample task 1"),
             TodoItem(title: "Sample task 2"),
             TodoItem(title: "Sample task 3"),
-        ], listName: "To Do")
+        ], listName: "To Do", listID: TodoList.defaultID)
     }
 
     func snapshot(for configuration: SelectListIntent, in context: Context) async -> TodoEntry {
+        TodoStore.archiveStaleCompletedItemsStatic()
         let listID = configuration.list?.id ?? TodoList.defaultID
         let list = TodoStore.loadList(id: listID) ?? TodoList.makeDefault()
         let items = list.items.filter { !$0.isArchived }
-        return TodoEntry(date: .now, items: items, listName: list.name)
+        return TodoEntry(date: .now, items: items, listName: list.name, listID: list.id)
     }
 
     func timeline(for configuration: SelectListIntent, in context: Context) async -> Timeline<TodoEntry> {
+        TodoStore.archiveStaleCompletedItemsStatic()
         let listID = configuration.list?.id ?? TodoList.defaultID
         let list = TodoStore.loadList(id: listID) ?? TodoList.makeDefault()
-        let items = list.items.filter { !$0.isArchived }
-        let entry = TodoEntry(date: .now, items: items, listName: list.name)
-        return Timeline(entries: [entry], policy: .after(.now.addingTimeInterval(15 * 60)))
+        let activeItems = list.items.filter { !$0.isArchived }
+
+        // Show current state (including recently completed items)
+        let now = Date()
+        let currentEntry = TodoEntry(date: now, items: activeItems, listName: list.name, listID: list.id)
+
+        // If any items are completed but not yet archived, schedule a follow-up
+        // entry that hides them after 3 seconds
+        let hasRecentlyCompleted = activeItems.contains { $0.isCompleted && $0.completedDate != nil }
+        var entries = [currentEntry]
+        if hasRecentlyCompleted {
+            let cleanedItems = activeItems.filter { !$0.isCompleted }
+            let futureEntry = TodoEntry(date: now.addingTimeInterval(3), items: cleanedItems, listName: list.name, listID: list.id)
+            entries.append(futureEntry)
+        }
+
+        return Timeline(entries: entries, policy: .after(now.addingTimeInterval(15 * 60)))
     }
 }
 
 struct TodoWidgetRowView: View {
     let item: TodoItem
+    let listID: UUID
 
     var body: some View {
         HStack(spacing: 8) {
@@ -57,7 +75,7 @@ struct TodoWidgetRowView: View {
             .buttonStyle(.plain)
             .invalidatableContent()
 
-            Link(destination: URL(string: "basiclist://item/\(item.id.uuidString)")!) {
+            Link(destination: URL(string: "basiclist://item/\(listID.uuidString)/\(item.id.uuidString)")!) {
                 HStack {
                     Text(item.title)
                         .font(.system(size: 15))
@@ -90,18 +108,11 @@ struct BasicListWidgetEntryView: View {
                     .font(.title3.bold())
                 Spacer()
                 if showsBackground {
-                    Link(destination: URL(string: "basiclist://new")!) {
+                    Link(destination: URL(string: "basiclist://new/\(entry.listID.uuidString)")!) {
                         Image(systemName: "plus.circle.fill")
                             .font(.title2)
                             .foregroundStyle(.blue)
                     }
-                } else {
-                    Button(intent: AddItemIntent()) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(.blue)
-                    }
-                    .buttonStyle(.plain)
                 }
             }
             .padding(.bottom, 8)
@@ -116,12 +127,13 @@ struct BasicListWidgetEntryView: View {
             } else {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(displayItems) { item in
-                        TodoWidgetRowView(item: item)
+                        TodoWidgetRowView(item: item, listID: entry.listID)
                     }
                 }
                 Spacer(minLength: 0)
             }
         }
+        .widgetURL(URL(string: "basiclist://list/\(entry.listID.uuidString)"))
         .containerBackground(.fill.tertiary, for: .widget)
     }
 }
@@ -146,7 +158,7 @@ struct BasicListWidget: Widget {
         TodoItem(title: "Buy groceries"),
         TodoItem(title: "Walk the dog"),
         TodoItem(title: "Read a book"),
-    ], listName: "To Do")
+    ], listName: "To Do", listID: TodoList.defaultID)
 }
 
 #Preview("Medium", as: .systemMedium) {
@@ -157,11 +169,11 @@ struct BasicListWidget: Widget {
         TodoItem(title: "Walk the dog"),
         TodoItem(title: "Read a book"),
         TodoItem(title: "Call dentist"),
-    ], listName: "To Do")
+    ], listName: "To Do", listID: TodoList.defaultID)
 }
 
 #Preview("Large", as: .systemLarge) {
     BasicListWidget()
 } timeline: {
-    TodoEntry(date: .now, items: (1...9).map { TodoItem(title: "Task \($0)") }, listName: "To Do")
+    TodoEntry(date: .now, items: (1...9).map { TodoItem(title: "Task \($0)") }, listName: "To Do", listID: TodoList.defaultID)
 }

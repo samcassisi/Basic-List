@@ -113,6 +113,7 @@ class TodoStore {
         mutateSelectedList { list in
             guard let index = list.items.firstIndex(where: { $0.id == id }) else { return }
             list.items[index].isCompleted.toggle()
+            list.items[index].completedDate = list.items[index].isCompleted ? Date() : nil
         }
     }
 
@@ -130,6 +131,7 @@ class TodoStore {
             list.items[index].isCompleted = false
             list.items[index].isArchived = false
             list.items[index].archivedDate = nil
+            list.items[index].completedDate = nil
         }
     }
 
@@ -195,6 +197,21 @@ class TodoStore {
         lists[index].name = newName.trimmingCharacters(in: .whitespaces)
     }
 
+    func archiveStaleCompletedItems() {
+        let cutoff = Date().addingTimeInterval(-3)
+        for index in lists.indices {
+            for itemIndex in lists[index].items.indices {
+                let item = lists[index].items[itemIndex]
+                if item.isCompleted && !item.isArchived,
+                   let completedDate = item.completedDate,
+                   completedDate < cutoff {
+                    lists[index].items[itemIndex].isArchived = true
+                    lists[index].items[itemIndex].archivedDate = Date()
+                }
+            }
+        }
+    }
+
     func purgeOldArchivedItems() {
         let cutoff = Calendar.current.date(byAdding: .day, value: -28, to: Date())!
         for index in lists.indices {
@@ -235,6 +252,29 @@ class TodoStore {
 
     nonisolated static func loadList(id: UUID) -> TodoList? {
         loadLists().first(where: { $0.id == id })
+    }
+
+    /// Archives stale completed items across all lists and persists the change.
+    /// Intended for use by the widget extension process.
+    nonisolated static func archiveStaleCompletedItemsStatic() {
+        var lists = loadLists()
+        let cutoff = Date().addingTimeInterval(-3)
+        var changed = false
+        for i in lists.indices {
+            for j in lists[i].items.indices {
+                let item = lists[i].items[j]
+                if item.isCompleted && !item.isArchived,
+                   let completedDate = item.completedDate,
+                   completedDate < cutoff {
+                    lists[i].items[j].isArchived = true
+                    lists[i].items[j].archivedDate = Date()
+                    changed = true
+                }
+            }
+        }
+        if changed {
+            saveLists(lists)
+        }
     }
 
     nonisolated static func saveLists(_ lists: [TodoList]) {

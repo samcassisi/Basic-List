@@ -13,13 +13,15 @@ struct TodoItem: Identifiable, Codable, Sendable {
     var isCompleted: Bool = false
     var isArchived: Bool = false
     var archivedDate: Date?
+    var completedDate: Date?
 
-    nonisolated init(id: UUID = UUID(), title: String, isCompleted: Bool = false, isArchived: Bool = false, archivedDate: Date? = nil) {
+    nonisolated init(id: UUID = UUID(), title: String, isCompleted: Bool = false, isArchived: Bool = false, archivedDate: Date? = nil, completedDate: Date? = nil) {
         self.id = id
         self.title = title
         self.isCompleted = isCompleted
         self.isArchived = isArchived
         self.archivedDate = archivedDate
+        self.completedDate = completedDate
     }
 
     init(from decoder: Decoder) throws {
@@ -29,5 +31,6 @@ struct TodoItem: Identifiable, Codable, Sendable {
         isCompleted = try container.decode(Bool.self, forKey: .isCompleted)
         isArchived = try container.decode(Bool.self, forKey: .isArchived)
         archivedDate = try container.decodeIfPresent(Date.self, forKey: .archivedDate)
+        completedDate = try container.decodeIfPresent(Date.self, forKey: .completedDate)
     }
 }

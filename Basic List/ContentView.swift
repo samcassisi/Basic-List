@@ -51,11 +51,32 @@ struct ContentView: View {
             .onOpenURL { url in
                 guard url.scheme == "basiclist" else { return }
                 if url.host == "new" {
+                    if let idString = url.pathComponents.dropFirst().first,
+                       let uuid = UUID(uuidString: idString),
+                       store.lists.contains(where: { $0.id == uuid }) {
+                        store.selectedListID = uuid
+                    }
                     isTextFieldFocused = true
-                } else if url.host == "item",
+                } else if url.host == "list",
                           let idString = url.pathComponents.dropFirst().first,
                           let uuid = UUID(uuidString: idString) {
-                    highlightedItemID = uuid
+                    if store.lists.contains(where: { $0.id == uuid }) {
+                        store.selectedListID = uuid
+                    }
+                } else if url.host == "item" {
+                    let components = url.pathComponents.dropFirst()
+                    let uuids = components.compactMap { UUID(uuidString: $0) }
+                    if uuids.count == 2 {
+                        // basiclist://item/{listID}/{itemID}
+                        if store.lists.contains(where: { $0.id == uuids[0] }) {
+                            store.selectedListID = uuids[0]
+                        }
+                        highlightedItemID = uuids[1]
+                    } else if let uuid = uuids.first {
+                        // basiclist://item/{itemID} (legacy)
+                        highlightedItemID = uuid
+                    }
+                    guard highlightedItemID != nil else { return }
                     highlightVisible = true
                     Task {
                         try? await Task.sleep(for: .seconds(0.5))

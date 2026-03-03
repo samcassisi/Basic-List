@@ -12,7 +12,7 @@ struct AddItemIntent: AppIntent {
     static var description: IntentDescription = "Adds a new item to one of your lists"
     static var openAppWhenRun: Bool = false
 
-    @Parameter(title: "Item Name")
+    @Parameter(title: "Item Name", requestValueDialog: "What would you like to add?")
     var itemName: String
 
     @Parameter(title: "List", default: ListEntity.defaultEntity)

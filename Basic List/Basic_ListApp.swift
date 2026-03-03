@@ -22,6 +22,7 @@ struct Basic_ListApp: App {
             ContentView(store: store)
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
                     store.reload()
+                    store.archiveStaleCompletedItems()
                 }
         }
     }

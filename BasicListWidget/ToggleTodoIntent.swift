@@ -25,11 +25,29 @@ struct ToggleTodoIntent: AppIntent {
         guard let uuid = UUID(uuidString: todoID) else { return .result() }
         var lists = TodoStore.loadLists()
 
+        // Archive any stale completed items first
+        let cutoff = Date().addingTimeInterval(-3)
+        for i in lists.indices {
+            for j in lists[i].items.indices {
+                let item = lists[i].items[j]
+                if item.isCompleted && !item.isArchived,
+                   let completedDate = item.completedDate,
+                   completedDate < cutoff {
+                    lists[i].items[j].isArchived = true
+                    lists[i].items[j].archivedDate = Date()
+                }
+            }
+        }
+
         for listIndex in lists.indices {
             if let itemIndex = lists[listIndex].items.firstIndex(where: { $0.id == uuid }) {
                 lists[listIndex].items[itemIndex].isCompleted.toggle()
                 if lists[listIndex].items[itemIndex].isCompleted {
-                    lists[listIndex].items[itemIndex].isArchived = true
+                    lists[listIndex].items[itemIndex].completedDate = Date()
+                } else {
+                    lists[listIndex].items[itemIndex].completedDate = nil
+                    lists[listIndex].items[itemIndex].isArchived = false
+                    lists[listIndex].items[itemIndex].archivedDate = nil
                 }
                 TodoStore.saveLists(lists)
                 WidgetCenter.shared.reloadAllTimelines()
