@@ -52,7 +52,7 @@ struct TodoProvider: AppIntentTimelineProvider {
         var entries = [currentEntry]
         if hasRecentlyCompleted {
             let cleanedItems = activeItems.filter { !$0.isCompleted }
-            let futureEntry = TodoEntry(date: now.addingTimeInterval(3), items: cleanedItems, listName: list.name, listID: list.id)
+            let futureEntry = TodoEntry(date: now.addingTimeInterval(2), items: cleanedItems, listName: list.name, listID: list.id)
             entries.append(futureEntry)
         }
 
@@ -89,12 +89,102 @@ struct TodoWidgetRowView: View {
     }
 }
 
+// MARK: - Lock Screen Accessory Views
+
+struct AccessoryCircularView: View {
+    let remainingCount: Int
+
+    var body: some View {
+        ZStack {
+            AccessoryWidgetBackground()
+            VStack(spacing: 1) {
+                Text("\(remainingCount)")
+                    .font(.title2.bold())
+                    .widgetAccentable()
+                Text("to do")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+struct AccessoryRectangularView: View {
+    let entry: TodoEntry
+    let remainingCount: Int
+
+    var body: some View {
+        let incompleteItems = Array(entry.items.filter { !$0.isCompleted }.prefix(3))
+
+        VStack(alignment: .leading, spacing: 2) {
+            Text(entry.listName)
+                .font(.headline)
+                .widgetAccentable()
+
+            if incompleteItems.isEmpty {
+                Text("All done!")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(incompleteItems) { item in
+                    HStack(spacing: 4) {
+                        Image(systemName: "circle")
+                            .font(.system(size: 8))
+                            .foregroundStyle(.secondary)
+                        Text(item.title)
+                            .font(.caption)
+                            .lineLimit(1)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+struct AccessoryInlineView: View {
+    let entry: TodoEntry
+
+    var body: some View {
+        let firstIncomplete = entry.items.first(where: { !$0.isCompleted })
+        if let item = firstIncomplete {
+            Label(item.title, systemImage: "checklist")
+        } else {
+            Label("All tasks done", systemImage: "checkmark.circle")
+        }
+    }
+}
+
+// MARK: - Main Entry View
+
 struct BasicListWidgetEntryView: View {
     @Environment(\.widgetFamily) var family
     @Environment(\.showsWidgetContainerBackground) var showsBackground
     var entry: TodoEntry
 
+    private var remainingCount: Int {
+        entry.items.filter { !$0.isCompleted }.count
+    }
+
     var body: some View {
+        Group {
+            switch family {
+            case .accessoryCircular:
+                AccessoryCircularView(remainingCount: remainingCount)
+            case .accessoryRectangular:
+                AccessoryRectangularView(entry: entry, remainingCount: remainingCount)
+                    .widgetURL(URL(string: "basiclist://list/\(entry.listID.uuidString)"))
+            case .accessoryInline:
+                AccessoryInlineView(entry: entry)
+                    .widgetURL(URL(string: "basiclist://list/\(entry.listID.uuidString)"))
+            default:
+                systemWidgetBody
+            }
+        }
+        .containerBackground(.fill.tertiary, for: .widget)
+    }
+
+    private var systemWidgetBody: some View {
         let itemCount: Int = switch family {
         case .systemMedium: 4
         case .systemLarge: 9
@@ -102,7 +192,7 @@ struct BasicListWidgetEntryView: View {
         }
         let displayItems = Array(entry.items.prefix(itemCount))
 
-        VStack(alignment: .leading, spacing: 0) {
+        return VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text(entry.listName)
                     .font(.title3.bold())
@@ -134,7 +224,6 @@ struct BasicListWidgetEntryView: View {
             }
         }
         .widgetURL(URL(string: "basiclist://list/\(entry.listID.uuidString)"))
-        .containerBackground(.fill.tertiary, for: .widget)
     }
 }
 
@@ -147,7 +236,10 @@ struct BasicListWidget: Widget {
         }
         .configurationDisplayName("To Do List")
         .description("View and check off your to-do items.")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .supportedFamilies([
+            .systemSmall, .systemMedium, .systemLarge,
+            .accessoryRectangular, .accessoryInline
+        ])
     }
 }
 
@@ -177,3 +269,33 @@ struct BasicListWidget: Widget {
 } timeline: {
     TodoEntry(date: .now, items: (1...9).map { TodoItem(title: "Task \($0)") }, listName: "To Do", listID: TodoList.defaultID)
 }
+#Preview("Circular", as: .accessoryCircular) {
+    BasicListWidget()
+} timeline: {
+    TodoEntry(date: .now, items: [
+        TodoItem(title: "Buy groceries"),
+        TodoItem(title: "Walk the dog"),
+        TodoItem(title: "Read a book"),
+    ], listName: "To Do", listID: TodoList.defaultID)
+}
+
+#Preview("Rectangular", as: .accessoryRectangular) {
+    BasicListWidget()
+} timeline: {
+    TodoEntry(date: .now, items: [
+        TodoItem(title: "Buy groceries"),
+        TodoItem(title: "Walk the dog"),
+        TodoItem(title: "Read a book"),
+    ], listName: "To Do", listID: TodoList.defaultID)
+}
+
+#Preview("Inline", as: .accessoryInline) {
+    BasicListWidget()
+} timeline: {
+    TodoEntry(date: .now, items: [
+        TodoItem(title: "Buy groceries"),
+        TodoItem(title: "Walk the dog"),
+        TodoItem(title: "Read a book"),
+    ], listName: "To Do", listID: TodoList.defaultID)
+}
+

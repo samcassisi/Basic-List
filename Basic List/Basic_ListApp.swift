@@ -20,10 +20,6 @@ struct Basic_ListApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView(store: store)
-                .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
-                    store.reload()
-                    store.archiveStaleCompletedItems()
-                }
         }
     }
 }

@@ -9,12 +9,13 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct ContentView: View {
-    var store: TodoStore
+    @Bindable var store: TodoStore
     @State private var newItemTitle: String = ""
     @State private var archiveTimers: [UUID: Task<Void, Never>] = [:]
     @State private var highlightedItemID: UUID?
     @State private var highlightVisible: Bool = false
     @State private var showNewListSheet: Bool = false
+    @State private var showListManager: Bool = false
     @State private var newListName: String = ""
     @State private var showListSettings: Bool = false
     @State private var renameListName: String = ""
@@ -27,26 +28,50 @@ struct ContentView: View {
     @State private var editingItemTitle: String = ""
     @FocusState private var isTextFieldFocused: Bool
     @FocusState private var isEditingFocused: Bool
+    @State private var isInsertingNewItem: Bool = false
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
-                todoList
+            TabView(selection: $store.selectedListID) {
+                ForEach(store.lists) { list in
+                    ZStack(alignment: .bottom) {
+                        todoList(for: list)
 
-                inputBar
+                        inputBar
+                    }
+                    .onTapGesture {
+                        isTextFieldFocused = false
+                        isEditingFocused = false
+                        commitEdit()
+                    }
+                    .tag(list.id)
+                }
             }
-            .onTapGesture {
-                isTextFieldFocused = false
-                commitEdit()
-            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
             .navigationTitle(store.selectedList.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    listSwitcherMenu
+                ToolbarItem(placement: .principal) {
+                    Text(store.selectedList.name)
+                        .font(.title2.bold())
+                        .frame(maxHeight: .infinity)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     trailingToolbarItems
                 }
+            }
+            .onAppear {
+                resumeArchiveTimers()
+            }
+            .onChange(of: isEditingFocused) { _, focused in
+                if !focused && !isInsertingNewItem { commitEdit() }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+                commitEdit()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+                resumeArchiveTimers()
             }
             .onOpenURL { url in
                 guard url.scheme == "basiclist" else { return }
@@ -66,32 +91,34 @@ struct ContentView: View {
                 } else if url.host == "item" {
                     let components = url.pathComponents.dropFirst()
                     let uuids = components.compactMap { UUID(uuidString: $0) }
+                    var itemID: UUID?
                     if uuids.count == 2 {
                         // basiclist://item/{listID}/{itemID}
                         if store.lists.contains(where: { $0.id == uuids[0] }) {
                             store.selectedListID = uuids[0]
                         }
-                        highlightedItemID = uuids[1]
+                        itemID = uuids[1]
                     } else if let uuid = uuids.first {
                         // basiclist://item/{itemID} (legacy)
-                        highlightedItemID = uuid
+                        itemID = uuid
                     }
-                    guard highlightedItemID != nil else { return }
-                    highlightVisible = true
-                    Task {
-                        try? await Task.sleep(for: .seconds(0.5))
-                        await MainActor.run {
-                            highlightVisible = false
-                        }
-                        try? await Task.sleep(for: .seconds(2))
-                        await MainActor.run {
-                            highlightedItemID = nil
+                    if let itemID,
+                       let item = store.selectedList.items.first(where: { $0.id == itemID }) {
+                        isEditingFocused = false
+                        commitEdit()
+                        editingItemID = itemID
+                        editingItemTitle = item.title
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            isEditingFocused = true
                         }
                     }
                 }
             }
             .sheet(isPresented: $showNewListSheet) {
                 newListSheet
+            }
+            .sheet(isPresented: $showListManager) {
+                listManagerSheet
             }
             .sheet(isPresented: $showListSettings) {
                 listSettingsSheet
@@ -120,39 +147,14 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - List Switcher Menu
-
-    private var listSwitcherMenu: some View {
-        Menu {
-            ForEach(store.lists) { list in
-                Button {
-                    store.selectedListID = list.id
-                } label: {
-                    if list.id == store.selectedListID {
-                        Label(list.name, systemImage: "checkmark")
-                    } else {
-                        Text(list.name)
-                    }
-                }
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: "chevron.down")
-                    .font(.caption2.weight(.bold))
-            }
-        }
-        .buttonStyle(.glass)
-        .clipShape(Circle())
-    }
-
     // MARK: - Trailing Toolbar Items
 
     private var trailingToolbarItems: some View {
         HStack(spacing: 8) {
             Button {
-                showNewListSheet = true
+                showListManager = true
             } label: {
-                Image(systemName: "plus")
+                Image(systemName: "list.bullet")
                     .frame(width: 20, height: 20)
             }
             .buttonStyle(.glass)
@@ -182,9 +184,12 @@ struct ContentView: View {
 
     // MARK: - Todo List
 
-    private var todoList: some View {
-        List {
-            ForEach(store.activeItems) { item in
+    private func todoList(for list: TodoList) -> some View {
+        let activeItems = list.items.filter { !$0.isArchived }
+        let archivedItems = list.items.filter { $0.isArchived }
+
+        return List {
+            ForEach(activeItems) { item in
                 activeRow(item: item)
             }
             .onMove { source, destination in
@@ -192,9 +197,9 @@ struct ContentView: View {
             }
             .deleteDisabled(true)
 
-            if store.selectedList.showArchived && !store.archivedItems.isEmpty {
+            if list.showArchived && !archivedItems.isEmpty {
                 Section {
-                    ForEach(store.archivedItems) { item in
+                    ForEach(archivedItems) { item in
                         archivedRow(item: item)
                     }
                     .moveDisabled(true)
@@ -217,7 +222,10 @@ struct ContentView: View {
             }
         }
         .environment(\.editMode, .constant(.active))
+        .scrollContentBackground(.visible)
+        .scrollDismissesKeyboard(.interactively)
         .contentMargins(.bottom, 80, for: .scrollContent)
+        .ignoresSafeArea(edges: .bottom)
     }
 
     // MARK: - Row Views
@@ -246,8 +254,32 @@ struct ContentView: View {
                     .textFieldStyle(.plain)
                     .focused($isEditingFocused)
                     .onSubmit {
+                        let currentID = editingItemID
+                        let wasEmpty = editingItemTitle.trimmingCharacters(in: .whitespaces).isEmpty
+                        isInsertingNewItem = !wasEmpty
                         commitEdit()
+                        if !wasEmpty, let currentID {
+                            let newID = withAnimation { store.insertItem(after: currentID) }
+                            editingItemID = newID
+                            editingItemTitle = ""
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                isEditingFocused = true
+                                isInsertingNewItem = false
+                            }
+                        } else {
+                            isInsertingNewItem = false
+                        }
                     }
+
+                Button {
+                    isEditingFocused = false
+                    commitEdit()
+                } label: {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(.blue)
+                }
+                .buttonStyle(.plain)
             } else {
                 Text(item.title)
                     .strikethrough(item.isCompleted)
@@ -257,14 +289,42 @@ struct ContentView: View {
             }
         }
 
+        let otherLists = store.lists.filter { $0.id != store.selectedListID }
+
         let tappableRow = row
             .contentShape(Rectangle())
             .onTapGesture {
                 guard editingItemID != item.id else { return }
+                commitEdit()
                 editingItemID = item.id
                 editingItemTitle = item.title
                 isEditingFocused = true
             }
+            .contextMenu {
+                if !otherLists.isEmpty {
+                    Menu {
+                        ForEach(otherLists) { list in
+                            Button {
+                                withAnimation {
+                                    store.moveItem(id: item.id, toList: list.id)
+                                }
+                            } label: {
+                                Label(list.name, systemImage: "folder")
+                            }
+                        }
+                    } label: {
+                        Label("Move to List", systemImage: "arrow.right.doc.on.clipboard")
+                    }
+                }
+                Button(role: .destructive) {
+                    withAnimation {
+                        store.deleteItem(id: item.id)
+                    }
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
+            .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
 
         if highlightedItemID == item.id {
             tappableRow.listRowBackground(
@@ -318,6 +378,9 @@ struct ContentView: View {
                 .textFieldStyle(.plain)
                 .focused($isTextFieldFocused)
                 .onSubmit(addItem)
+                .onChange(of: isTextFieldFocused) { _, focused in
+                    if focused { commitEdit() }
+                }
 
             Button(action: addItem) {
                 Image(systemName: "plus")
@@ -335,6 +398,69 @@ struct ContentView: View {
     }
 
     // MARK: - New List Sheet
+
+    // MARK: - List Manager Sheet
+
+    private var listManagerSheet: some View {
+        NavigationStack {
+            List {
+                ForEach(store.lists) { list in
+                    Button {
+                        store.selectedListID = list.id
+                        showListManager = false
+                    } label: {
+                        HStack {
+                            Text(list.name)
+                                .foregroundStyle(list.id == store.selectedListID ? .blue : .primary)
+                            Spacer()
+                            if list.id == store.selectedListID {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(.blue)
+                                    .font(.footnote.weight(.semibold))
+                            }
+                        }
+                    }
+                    .contextMenu {
+                        if !list.isDefault {
+                            Button(role: .destructive) {
+                                withAnimation {
+                                    store.deleteList(id: list.id)
+                                }
+                            } label: {
+                                Label("Delete List", systemImage: "trash")
+                            }
+                        }
+                    }
+                }
+                .onMove { source, destination in
+                    store.reorderLists(from: source, to: destination)
+                }
+            }
+            .environment(\.editMode, .constant(.active))
+            .navigationTitle("Lists")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        showListManager = false
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showListManager = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            showNewListSheet = true
+                        }
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
 
     private var newListSheet: some View {
         NewListSheet(listName: $newListName, isPresented: $showNewListSheet, onCreate: createList)
@@ -476,7 +602,12 @@ struct ContentView: View {
 
     private func commitEdit() {
         guard let id = editingItemID else { return }
-        store.updateItemTitle(id: id, title: editingItemTitle)
+        let trimmed = editingItemTitle.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty {
+            withAnimation { store.deleteItem(id: id) }
+        } else {
+            store.updateItemTitle(id: id, title: editingItemTitle)
+        }
         editingItemID = nil
         editingItemTitle = ""
     }
@@ -506,10 +637,39 @@ struct ContentView: View {
         showListSettings = false
     }
 
+    private func resumeArchiveTimers() {
+        // Cancel all existing timers — they may be stale from before backgrounding
+        for (id, task) in archiveTimers {
+            task.cancel()
+            archiveTimers.removeValue(forKey: id)
+        }
+
+        // Reload fresh data and archive anything already past 3 seconds
+        store.reload()
+        store.archiveStaleCompletedItems()
+
+        // Schedule timers for any remaining completed-but-not-archived items
+        for item in store.selectedList.items where item.isCompleted && !item.isArchived {
+            if let completedDate = item.completedDate {
+                let remaining = max(2 - Date().timeIntervalSince(completedDate), 0)
+                archiveTimers[item.id] = Task {
+                    try? await Task.sleep(for: .seconds(remaining))
+                    guard !Task.isCancelled else { return }
+                    await MainActor.run {
+                        withAnimation { store.archive(id: item.id) }
+                        archiveTimers.removeValue(forKey: item.id)
+                    }
+                }
+            } else {
+                scheduleArchive(for: item.id)
+            }
+        }
+    }
+
     private func scheduleArchive(for id: UUID) {
         archiveTimers[id]?.cancel()
         archiveTimers[id] = Task {
-            try? await Task.sleep(for: .seconds(3))
+            try? await Task.sleep(for: .seconds(2))
             guard !Task.isCancelled else { return }
             await MainActor.run {
                 withAnimation {

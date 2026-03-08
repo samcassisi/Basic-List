@@ -26,7 +26,7 @@ struct ToggleTodoIntent: AppIntent {
         var lists = TodoStore.loadLists()
 
         // Archive any stale completed items first
-        let cutoff = Date().addingTimeInterval(-3)
+        let cutoff = Date().addingTimeInterval(-2)
         for i in lists.indices {
             for j in lists[i].items.indices {
                 let item = lists[i].items[j]

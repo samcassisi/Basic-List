@@ -15,11 +15,11 @@ struct AddItemIntent: AppIntent {
     @Parameter(title: "Item Name", requestValueDialog: "What would you like to add?")
     var itemName: String
 
-    @Parameter(title: "List", default: ListEntity.defaultEntity)
-    var list: ListEntity?
+    @Parameter(title: "List", requestValueDialog: "Which list?")
+    var list: ListEntity
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let listID = list?.id ?? UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+        let listID = list.id
         var lists = TodoStore.loadLists()
 
         guard let listIndex = lists.firstIndex(where: { $0.id == listID }) else {

@@ -100,6 +100,17 @@ class TodoStore {
         }
     }
 
+    @discardableResult
+    func insertItem(after id: UUID) -> UUID {
+        let newItem = TodoItem(title: "")
+        mutateSelectedList { list in
+            if let index = list.items.firstIndex(where: { $0.id == id }) {
+                list.items.insert(newItem, at: index + 1)
+            }
+        }
+        return newItem.id
+    }
+
     func updateItemTitle(id: UUID, title: String) {
         let trimmed = title.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
@@ -147,6 +158,15 @@ class TodoStore {
         }
     }
 
+    func moveItem(id: UUID, toList destinationListID: UUID) {
+        guard let sourceIndex = lists.firstIndex(where: { $0.id == selectedListID }),
+              let destIndex = lists.firstIndex(where: { $0.id == destinationListID }),
+              sourceIndex != destIndex,
+              let itemIndex = lists[sourceIndex].items.firstIndex(where: { $0.id == id }) else { return }
+        let item = lists[sourceIndex].items.remove(at: itemIndex)
+        lists[destIndex].items.insert(item, at: 0)
+    }
+
     func moveActive(from source: IndexSet, to destination: Int) {
         mutateSelectedList { list in
             var active = list.items.filter { !$0.isArchived }
@@ -192,13 +212,17 @@ class TodoStore {
         }
     }
 
+    func reorderLists(from source: IndexSet, to destination: Int) {
+        lists.move(fromOffsets: source, toOffset: destination)
+    }
+
     func renameList(id: UUID, to newName: String) {
         guard let index = lists.firstIndex(where: { $0.id == id }) else { return }
         lists[index].name = newName.trimmingCharacters(in: .whitespaces)
     }
 
     func archiveStaleCompletedItems() {
-        let cutoff = Date().addingTimeInterval(-3)
+        let cutoff = Date().addingTimeInterval(-2)
         for index in lists.indices {
             for itemIndex in lists[index].items.indices {
                 let item = lists[index].items[itemIndex]
@@ -258,7 +282,7 @@ class TodoStore {
     /// Intended for use by the widget extension process.
     nonisolated static func archiveStaleCompletedItemsStatic() {
         var lists = loadLists()
-        let cutoff = Date().addingTimeInterval(-3)
+        let cutoff = Date().addingTimeInterval(-2)
         var changed = false
         for i in lists.indices {
             for j in lists[i].items.indices {
