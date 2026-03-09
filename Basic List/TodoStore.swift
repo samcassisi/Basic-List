@@ -159,7 +159,11 @@ class TodoStore {
     }
 
     func moveItem(id: UUID, toList destinationListID: UUID) {
-        guard let sourceIndex = lists.firstIndex(where: { $0.id == selectedListID }),
+        moveItem(id: id, fromList: selectedListID, toList: destinationListID)
+    }
+
+    func moveItem(id: UUID, fromList sourceListID: UUID, toList destinationListID: UUID) {
+        guard let sourceIndex = lists.firstIndex(where: { $0.id == sourceListID }),
               let destIndex = lists.firstIndex(where: { $0.id == destinationListID }),
               sourceIndex != destIndex,
               let itemIndex = lists[sourceIndex].items.firstIndex(where: { $0.id == id }) else { return }
@@ -172,6 +176,18 @@ class TodoStore {
             var active = list.items.filter { !$0.isArchived }
             let archived = list.items.filter { $0.isArchived }
             active.move(fromOffsets: source, toOffset: destination)
+            list.items = active + archived
+        }
+    }
+
+    func moveActiveItem(id: UUID, toIndex destination: Int) {
+        mutateSelectedList { list in
+            var active = list.items.filter { !$0.isArchived }
+            let archived = list.items.filter { $0.isArchived }
+            guard let sourceIndex = active.firstIndex(where: { $0.id == id }) else { return }
+            let item = active.remove(at: sourceIndex)
+            let adjusted = min(destination, active.count)
+            active.insert(item, at: adjusted)
             list.items = active + archived
         }
     }

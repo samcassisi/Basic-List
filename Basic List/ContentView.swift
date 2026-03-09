@@ -29,6 +29,11 @@ struct ContentView: View {
     @FocusState private var isTextFieldFocused: Bool
     @FocusState private var isEditingFocused: Bool
     @State private var isInsertingNewItem: Bool = false
+    @State private var collapsingItemIDs: Set<UUID> = []
+    @State private var isHandlingDeepLink: Bool = false
+    @State private var dragTargetItemID: UUID?
+    
+    
 
     var body: some View {
         NavigationStack {
@@ -39,6 +44,7 @@ struct ContentView: View {
 
                         inputBar
                     }
+                    .background(Color(.systemGroupedBackground).ignoresSafeArea())
                     .onTapGesture {
                         isTextFieldFocused = false
                         isEditingFocused = false
@@ -63,6 +69,12 @@ struct ContentView: View {
             }
             .onAppear {
                 resumeArchiveTimers()
+            }
+            .onChange(of: store.selectedListID) { _, _ in
+                guard !isHandlingDeepLink else { return }
+                isTextFieldFocused = false
+                isEditingFocused = false
+                commitEdit()
             }
             .onChange(of: isEditingFocused) { _, focused in
                 if !focused && !isInsertingNewItem { commitEdit() }
@@ -91,25 +103,33 @@ struct ContentView: View {
                 } else if url.host == "item" {
                     let components = url.pathComponents.dropFirst()
                     let uuids = components.compactMap { UUID(uuidString: $0) }
+                    var listID: UUID?
                     var itemID: UUID?
                     if uuids.count == 2 {
                         // basiclist://item/{listID}/{itemID}
-                        if store.lists.contains(where: { $0.id == uuids[0] }) {
-                            store.selectedListID = uuids[0]
-                        }
+                        listID = uuids[0]
                         itemID = uuids[1]
                     } else if let uuid = uuids.first {
                         // basiclist://item/{itemID} (legacy)
                         itemID = uuid
                     }
-                    if let itemID,
-                       let item = store.selectedList.items.first(where: { $0.id == itemID }) {
-                        isEditingFocused = false
-                        commitEdit()
-                        editingItemID = itemID
-                        editingItemTitle = item.title
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            isEditingFocused = true
+                    // Find the item across all lists
+                    if let itemID {
+                        let targetList = store.lists.first(where: { list in
+                            list.id == listID || list.items.contains(where: { $0.id == itemID })
+                        })
+                        if let targetList,
+                           let item = targetList.items.first(where: { $0.id == itemID }) {
+                            isEditingFocused = false
+                            commitEdit()
+                            isHandlingDeepLink = true
+                            store.selectedListID = targetList.id
+                            editingItemID = itemID
+                            editingItemTitle = item.title
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                isEditingFocused = true
+                                isHandlingDeepLink = false
+                            }
                         }
                     }
                 }
@@ -185,53 +205,119 @@ struct ContentView: View {
     // MARK: - Todo List
 
     private func todoList(for list: TodoList) -> some View {
-        let activeItems = list.items.filter { !$0.isArchived }
+        let activeItems = list.items.filter { !$0.isArchived || collapsingItemIDs.contains($0.id) }
         let archivedItems = list.items.filter { $0.isArchived }
 
-        return List {
-            ForEach(activeItems) { item in
-                activeRow(item: item)
-            }
-            .onMove { source, destination in
-                store.moveActive(from: source, to: destination)
-            }
-            .deleteDisabled(true)
+        return ScrollView {
+            LazyVStack(spacing: 10) {
+                ForEach(activeItems) { item in
+                    if collapsingItemIDs.contains(item.id) {
+                        Color.clear
+                            .frame(height: 0)
+                    } else {
+                        HStack(spacing: 0) {
+                            activeRowContent(item: item)
+                                .frame(maxWidth: .infinity, alignment: .leading)
 
-            if list.showArchived && !archivedItems.isEmpty {
-                Section {
-                    ForEach(archivedItems) { item in
-                        archivedRow(item: item)
-                    }
-                    .moveDisabled(true)
-                    .deleteDisabled(true)
-                } header: {
-                    HStack {
-                        Text("Archived")
-                        Spacer()
-                        Button {
-                            withAnimation {
-                                store.deleteAllArchived()
+                            if editingItemID != item.id {
+                                Image(systemName: "line.3.horizontal")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.tertiary)
+                                    .padding(.horizontal, 12)
+                                    .frame(maxHeight: .infinity)
+                                    .contentShape(Rectangle())
+                                    .draggable(item) {
+                                        Text(item.title)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 12)
+                                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                                    }
                             }
-                        } label: {
-                            Text("Delete All")
-                                .font(.caption)
-                                .foregroundStyle(.red)
+                        }
+                        .padding(.leading, 16)
+                        .padding(.trailing, editingItemID == item.id ? 16 : 4)
+                        .padding(.vertical, 12)
+                        .glassEffect(in: .rect(cornerRadius: 14))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color.accentColor.opacity(
+                                    highlightedItemID == item.id && highlightVisible ? 0.2 : 0
+                                ))
+                                .animation(.easeOut(duration: 1.5), value: highlightVisible)
+                                .allowsHitTesting(false)
+                        )
+                        .padding(.horizontal)
+                        .dropDestination(for: TodoItem.self) { items, _ in
+                            guard let dragged = items.first,
+                                  dragged.id != item.id else { return false }
+                            let targetIndex = activeItems.firstIndex(where: { $0.id == item.id }) ?? 0
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                store.moveActiveItem(id: dragged.id, toIndex: targetIndex)
+                            }
+                            return true
+                        } isTargeted: { isTargeted in
+                            dragTargetItemID = isTargeted ? item.id : nil
+                        }
+                        .overlay(alignment: .top) {
+                            if dragTargetItemID == item.id {
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(Color.accentColor)
+                                    .frame(height: 3)
+                                    .padding(.horizontal, 20)
+                                    .offset(y: -6)
+                                    .transition(.opacity)
+                            }
                         }
                     }
                 }
+
+                if list.showArchived && !archivedItems.isEmpty {
+                    archivedSectionView(items: archivedItems)
+                }
+
+                Color.clear.frame(height: 80)
+            }
+            .padding(.top, 8)
+        }
+        .scrollDismissesKeyboard(.interactively)
+    }
+
+    // MARK: - Archived Section
+
+    @ViewBuilder
+    private func archivedSectionView(items: [TodoItem]) -> some View {
+        HStack {
+            Text("Archived")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Button {
+                withAnimation {
+                    store.deleteAllArchived()
+                }
+            } label: {
+                Text("Delete All")
+                    .font(.caption)
+                    .foregroundStyle(.red)
             }
         }
-        .environment(\.editMode, .constant(.active))
-        .scrollContentBackground(.visible)
-        .scrollDismissesKeyboard(.interactively)
-        .contentMargins(.bottom, 80, for: .scrollContent)
-        .ignoresSafeArea(edges: .bottom)
+        .padding(.horizontal, 20)
+        .padding(.top, 16)
+
+        ForEach(items) { item in
+            archivedRow(item: item)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .glassEffect(in: .rect(cornerRadius: 14))
+                .padding(.horizontal)
+        }
     }
 
     // MARK: - Row Views
 
     @ViewBuilder
-    private func activeRow(item: TodoItem) -> some View {
+    private func activeRowContent(item: TodoItem) -> some View {
         let row = HStack(spacing: 12) {
             Button {
                 withAnimation {
@@ -291,7 +377,7 @@ struct ContentView: View {
 
         let otherLists = store.lists.filter { $0.id != store.selectedListID }
 
-        let tappableRow = row
+        row
             .contentShape(Rectangle())
             .onTapGesture {
                 guard editingItemID != item.id else { return }
@@ -324,17 +410,6 @@ struct ContentView: View {
                     Label("Delete", systemImage: "trash")
                 }
             }
-            .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-
-        if highlightedItemID == item.id {
-            tappableRow.listRowBackground(
-                Color.accentColor
-                    .opacity(highlightVisible ? 0.2 : 0)
-                    .animation(.easeOut(duration: 1.5), value: highlightVisible)
-            )
-        } else {
-            tappableRow
-        }
     }
 
     private func archivedRow(item: TodoItem) -> some View {
@@ -656,8 +731,7 @@ struct ContentView: View {
                     try? await Task.sleep(for: .seconds(remaining))
                     guard !Task.isCancelled else { return }
                     await MainActor.run {
-                        withAnimation { store.archive(id: item.id) }
-                        archiveTimers.removeValue(forKey: item.id)
+                        collapseAndArchive(id: item.id)
                     }
                 }
             } else {
@@ -672,17 +746,28 @@ struct ContentView: View {
             try? await Task.sleep(for: .seconds(2))
             guard !Task.isCancelled else { return }
             await MainActor.run {
-                withAnimation {
-                    store.archive(id: id)
-                }
-                archiveTimers.removeValue(forKey: id)
+                collapseAndArchive(id: id)
             }
+        }
+    }
+
+    private func collapseAndArchive(id: UUID) {
+        // Step 1: Fade out the row content
+        _ = withAnimation(.easeOut(duration: 0.3)) {
+            collapsingItemIDs.insert(id)
+        }
+        // Step 2: After fade, archive the item (row is already zero-height placeholder, so removal is invisible)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            store.archive(id: id)
+            collapsingItemIDs.remove(id)
+            archiveTimers.removeValue(forKey: id)
         }
     }
 
     private func cancelArchive(for id: UUID) {
         archiveTimers[id]?.cancel()
         archiveTimers.removeValue(forKey: id)
+        collapsingItemIDs.remove(id)
     }
 
     private func importCSV(result: Result<[URL], Error>) {
