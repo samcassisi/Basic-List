@@ -346,11 +346,11 @@ struct ContentView: View {
             return
         }
         withAnimation(.easeInOut(duration: 0.3)) {
-            // move(fromOffsets:toOffset:) expects a toOffset in the original array.
-            // When moving down, the dragged item is removed first which shifts
-            // indices below it up by one, so we add 1 to compensate.
-            let destination = targetIndex > sourceIndex ? targetIndex + 1 : targetIndex
-            store.moveActive(from: IndexSet(integer: sourceIndex), to: destination)
+            // targetIndex is the index of the item the blue line is shown above,
+            // meaning "insert before this item". move(fromOffsets:toOffset:) already
+            // accounts for the source removal when computing the final position,
+            // so we pass targetIndex directly for both directions.
+            store.moveActive(from: IndexSet(integer: sourceIndex), to: targetIndex)
         }
         reorderDraggingID = nil
         reorderCurrentIndex = nil
