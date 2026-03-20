@@ -6,8 +6,6 @@
 //
 
 import Foundation
-import CoreTransferable
-import UniformTypeIdentifiers
 
 struct TodoItem: Identifiable, Codable, Sendable {
     var id = UUID()
@@ -48,15 +46,5 @@ struct TodoItem: Identifiable, Codable, Sendable {
         try container.encode(isArchived, forKey: .isArchived)
         try container.encodeIfPresent(archivedDate, forKey: .archivedDate)
         try container.encodeIfPresent(completedDate, forKey: .completedDate)
-    }
-}
-
-extension UTType {
-    static let todoItem = UTType(exportedAs: "com.samcassisi.basiclist.todoitem")
-}
-
-extension TodoItem: Transferable {
-    nonisolated static var transferRepresentation: some TransferRepresentation {
-        CodableRepresentation(contentType: .todoItem)
     }
 }

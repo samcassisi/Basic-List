@@ -180,14 +180,39 @@ class TodoStore {
         }
     }
 
-    func moveActiveItem(id: UUID, toIndex destination: Int) {
+    func moveActiveItemToStart(id: UUID) {
+        mutateSelectedList { list in
+            var active = list.items.filter { !$0.isArchived }
+            let archived = list.items.filter { $0.isArchived }
+            guard let sourceIndex = active.firstIndex(where: { $0.id == id }), sourceIndex != 0 else { return }
+            let item = active.remove(at: sourceIndex)
+            active.insert(item, at: 0)
+            list.items = active + archived
+        }
+    }
+
+    func moveActiveItemToEnd(id: UUID) {
         mutateSelectedList { list in
             var active = list.items.filter { !$0.isArchived }
             let archived = list.items.filter { $0.isArchived }
             guard let sourceIndex = active.firstIndex(where: { $0.id == id }) else { return }
             let item = active.remove(at: sourceIndex)
-            let adjusted = min(destination, active.count)
-            active.insert(item, at: adjusted)
+            active.append(item)
+            list.items = active + archived
+        }
+    }
+
+    func moveActiveItem(id: UUID, toTargetID targetID: UUID, above: Bool) {
+        mutateSelectedList { list in
+            var active = list.items.filter { !$0.isArchived }
+            let archived = list.items.filter { $0.isArchived }
+            guard let sourceIndex = active.firstIndex(where: { $0.id == id }),
+                  let targetIndex = active.firstIndex(where: { $0.id == targetID }),
+                  sourceIndex != targetIndex else { return }
+            let item = active.remove(at: sourceIndex)
+            let newTargetIndex = active.firstIndex(where: { $0.id == targetID }) ?? 0
+            let insertIndex = above ? newTargetIndex : newTargetIndex + 1
+            active.insert(item, at: min(insertIndex, active.count))
             list.items = active + archived
         }
     }

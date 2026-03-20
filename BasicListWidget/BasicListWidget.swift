@@ -91,24 +91,6 @@ struct TodoWidgetRowView: View {
 
 // MARK: - Lock Screen Accessory Views
 
-struct AccessoryCircularView: View {
-    let remainingCount: Int
-
-    var body: some View {
-        ZStack {
-            AccessoryWidgetBackground()
-            VStack(spacing: 1) {
-                Text("\(remainingCount)")
-                    .font(.title2.bold())
-                    .widgetAccentable()
-                Text("to do")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-}
-
 struct AccessoryRectangularView: View {
     let entry: TodoEntry
     let remainingCount: Int
@@ -169,8 +151,6 @@ struct BasicListWidgetEntryView: View {
     var body: some View {
         Group {
             switch family {
-            case .accessoryCircular:
-                AccessoryCircularView(remainingCount: remainingCount)
             case .accessoryRectangular:
                 AccessoryRectangularView(entry: entry, remainingCount: remainingCount)
                     .widgetURL(URL(string: "basiclist://list/\(entry.listID.uuidString)"))
@@ -187,7 +167,7 @@ struct BasicListWidgetEntryView: View {
     private var systemWidgetBody: some View {
         let itemCount: Int = switch family {
         case .systemMedium: 4
-        case .systemLarge: 9
+        case .systemLarge: 11
         default: 4
         }
         let displayItems = Array(entry.items.prefix(itemCount))
@@ -250,6 +230,7 @@ struct BasicListWidget: Widget {
         TodoItem(title: "Buy groceries"),
         TodoItem(title: "Walk the dog"),
         TodoItem(title: "Read a book"),
+        TodoItem(title: "Design an app"),
     ], listName: "To Do", listID: TodoList.defaultID)
 }
 
@@ -267,18 +248,8 @@ struct BasicListWidget: Widget {
 #Preview("Large", as: .systemLarge) {
     BasicListWidget()
 } timeline: {
-    TodoEntry(date: .now, items: (1...9).map { TodoItem(title: "Task \($0)") }, listName: "To Do", listID: TodoList.defaultID)
+    TodoEntry(date: .now, items: (1...20).map { TodoItem(title: "Task \($0)") }, listName: "To Do", listID: TodoList.defaultID)
 }
-#Preview("Circular", as: .accessoryCircular) {
-    BasicListWidget()
-} timeline: {
-    TodoEntry(date: .now, items: [
-        TodoItem(title: "Buy groceries"),
-        TodoItem(title: "Walk the dog"),
-        TodoItem(title: "Read a book"),
-    ], listName: "To Do", listID: TodoList.defaultID)
-}
-
 #Preview("Rectangular", as: .accessoryRectangular) {
     BasicListWidget()
 } timeline: {
@@ -286,6 +257,7 @@ struct BasicListWidget: Widget {
         TodoItem(title: "Buy groceries"),
         TodoItem(title: "Walk the dog"),
         TodoItem(title: "Read a book"),
+        TodoItem(title: "Design an app"),
     ], listName: "To Do", listID: TodoList.defaultID)
 }
 
@@ -296,6 +268,7 @@ struct BasicListWidget: Widget {
         TodoItem(title: "Buy groceries"),
         TodoItem(title: "Walk the dog"),
         TodoItem(title: "Read a book"),
+        TodoItem(title: "Design an app"),
     ], listName: "To Do", listID: TodoList.defaultID)
 }
 

@@ -34,6 +34,10 @@ struct ContentView: View {
     @State private var reorderDraggingID: UUID?
     @State private var reorderCurrentIndex: Int?
     @State private var cardFrames: [UUID: CGRect] = [:]
+    @State private var autoScrollTimer: Timer?
+    @State private var scrollViewFrame: CGRect = .zero
+    @State private var contentOriginY: CGFloat = 0
+    @State private var autoScrollDirection: Int = 0
     
 
     var body: some View {
@@ -209,32 +213,56 @@ struct ContentView: View {
         let activeItems = list.items.filter { !$0.isArchived || collapsingItemIDs.contains($0.id) }
         let archivedItems = list.items.filter { $0.isArchived }
 
-        return ScrollView {
-            LazyVStack(spacing: 10) {
-                ForEach(Array(activeItems.enumerated()), id: \.element.id) { index, item in
-                    if collapsingItemIDs.contains(item.id) {
-                        Color.clear
-                            .frame(height: 0)
-                    } else {
-                        cardView(for: item, index: index, activeItems: activeItems)
+        return ScrollViewReader { scrollProxy in
+            ScrollView {
+                LazyVStack(spacing: 10) {
+                    ForEach(Array(activeItems.enumerated()), id: \.element.id) { index, item in
+                        if collapsingItemIDs.contains(item.id) {
+                            Color.clear
+                                .frame(height: 0)
+                        } else {
+                            cardView(for: item, index: index, activeItems: activeItems, scrollProxy: scrollProxy)
+                        }
                     }
-                }
 
-                if list.showArchived && !archivedItems.isEmpty {
-                    archivedSectionView(items: archivedItems)
-                }
+                    if list.showArchived && !archivedItems.isEmpty {
+                        archivedSectionView(items: archivedItems)
+                    }
 
-                Color.clear.frame(height: 80)
+                    Color.clear.frame(height: 80)
+                }
+                .padding(.top, 8)
+                .coordinateSpace(name: "reorderSpace")
+                .background(
+                    GeometryReader { geo in
+                        Color.clear
+                            .onChange(of: geo.frame(in: .global).minY) { _, newY in
+                                contentOriginY = newY
+                            }
+                            .onAppear {
+                                contentOriginY = geo.frame(in: .global).minY
+                            }
+                    }
+                )
             }
-            .padding(.top, 8)
-            .coordinateSpace(name: "reorderSpace")
+            .scrollDismissesKeyboard(.interactively)
+            .background(
+                GeometryReader { geo in
+                    Color.clear
+                        .onAppear {
+                            scrollViewFrame = geo.frame(in: .global)
+                        }
+                        .onChange(of: geo.frame(in: .global)) { _, frame in
+                            scrollViewFrame = frame
+                        }
+                }
+            )
         }
-        .scrollDismissesKeyboard(.interactively)
     }
 
     // MARK: - Card View
 
-    private func cardView(for item: TodoItem, index: Int, activeItems: [TodoItem]) -> some View {
+    private func cardView(for item: TodoItem, index: Int, activeItems: [TodoItem], scrollProxy: ScrollViewProxy) -> some View {
         let isDragging = reorderDraggingID == item.id
 
         return HStack(spacing: 0) {
@@ -260,6 +288,8 @@ struct ContentView: View {
                                     }
                                     if let drag = drag {
                                         updateReorderPosition(dragY: drag.location.y, activeItems: activeItems)
+                                        let globalY = contentOriginY + drag.location.y
+                                        updateAutoScroll(globalY: globalY, activeItems: activeItems, scrollProxy: scrollProxy)
                                     }
                                 default:
                                     break
@@ -271,6 +301,7 @@ struct ContentView: View {
                     )
             }
         }
+        .id(item.id)
         .padding(.leading, 16)
         .padding(.trailing, editingItemID == item.id ? 16 : 4)
         .padding(.vertical, 12)
@@ -336,7 +367,54 @@ struct ContentView: View {
         }
     }
 
+    private func updateAutoScroll(globalY: CGFloat, activeItems: [TodoItem], scrollProxy: ScrollViewProxy) {
+        let edgeZone: CGFloat = 60
+        let topThreshold = scrollViewFrame.minY + edgeZone
+        let bottomThreshold = scrollViewFrame.maxY - edgeZone
+
+        if globalY > bottomThreshold {
+            autoScrollDirection = 1
+        } else if globalY < topThreshold {
+            autoScrollDirection = -1
+        } else {
+            autoScrollDirection = 0
+            stopAutoScroll()
+            return
+        }
+
+        // Already have a timer running — it will pick up the latest direction
+        guard autoScrollTimer == nil else { return }
+
+        autoScrollTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { _ in
+            guard let currentIndex = reorderCurrentIndex,
+                  reorderDraggingID != nil,
+                  autoScrollDirection != 0 else {
+                stopAutoScroll()
+                return
+            }
+
+            // Find the next non-dragged item in the scroll direction
+            var targetIndex = currentIndex + autoScrollDirection
+            while targetIndex >= 0, targetIndex < activeItems.count,
+                  activeItems[targetIndex].id == reorderDraggingID {
+                targetIndex += autoScrollDirection
+            }
+            guard targetIndex >= 0, targetIndex < activeItems.count else { return }
+
+            let targetItem = activeItems[targetIndex]
+            withAnimation(.easeInOut(duration: 0.15)) {
+                scrollProxy.scrollTo(targetItem.id, anchor: autoScrollDirection > 0 ? .bottom : .top)
+            }
+        }
+    }
+
+    private func stopAutoScroll() {
+        autoScrollTimer?.invalidate()
+        autoScrollTimer = nil
+    }
+
     private func finishReorder(activeItems: [TodoItem]) {
+        stopAutoScroll()
         guard let draggedID = reorderDraggingID,
               let targetIndex = reorderCurrentIndex,
               let sourceIndex = activeItems.firstIndex(where: { $0.id == draggedID }),
@@ -461,6 +539,20 @@ struct ContentView: View {
                 isEditingFocused = true
             }
             .contextMenu {
+                Button {
+                    withAnimation {
+                        store.moveActiveItemToStart(id: item.id)
+                    }
+                } label: {
+                    Label("Move to Top", systemImage: "arrow.up.to.line")
+                }
+                Button {
+                    withAnimation {
+                        store.moveActiveItemToEnd(id: item.id)
+                    }
+                } label: {
+                    Label("Move to Bottom", systemImage: "arrow.down.to.line")
+                }
                 if !otherLists.isEmpty {
                     Menu {
                         ForEach(otherLists) { list in
