@@ -31,8 +31,9 @@ struct ContentView: View {
     @State private var isInsertingNewItem: Bool = false
     @State private var collapsingItemIDs: Set<UUID> = []
     @State private var isHandlingDeepLink: Bool = false
-    @State private var dragTargetItemID: UUID?
-    
+    @State private var reorderDraggingID: UUID?
+    @State private var reorderCurrentIndex: Int?
+    @State private var cardFrames: [UUID: CGRect] = [:]
     
 
     var body: some View {
@@ -210,64 +211,12 @@ struct ContentView: View {
 
         return ScrollView {
             LazyVStack(spacing: 10) {
-                ForEach(activeItems) { item in
+                ForEach(Array(activeItems.enumerated()), id: \.element.id) { index, item in
                     if collapsingItemIDs.contains(item.id) {
                         Color.clear
                             .frame(height: 0)
                     } else {
-                        HStack(spacing: 0) {
-                            activeRowContent(item: item)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-
-                            if editingItemID != item.id {
-                                Image(systemName: "line.3.horizontal")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.tertiary)
-                                    .padding(.horizontal, 12)
-                                    .frame(maxHeight: .infinity)
-                                    .contentShape(Rectangle())
-                                    .draggable(item) {
-                                        Text(item.title)
-                                            .padding(.horizontal, 16)
-                                            .padding(.vertical, 12)
-                                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-                                    }
-                            }
-                        }
-                        .padding(.leading, 16)
-                        .padding(.trailing, editingItemID == item.id ? 16 : 4)
-                        .padding(.vertical, 12)
-                        .glassEffect(in: .rect(cornerRadius: 14))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14)
-                                .fill(Color.accentColor.opacity(
-                                    highlightedItemID == item.id && highlightVisible ? 0.2 : 0
-                                ))
-                                .animation(.easeOut(duration: 1.5), value: highlightVisible)
-                                .allowsHitTesting(false)
-                        )
-                        .padding(.horizontal)
-                        .dropDestination(for: TodoItem.self) { items, _ in
-                            guard let dragged = items.first,
-                                  dragged.id != item.id else { return false }
-                            let targetIndex = activeItems.firstIndex(where: { $0.id == item.id }) ?? 0
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                store.moveActiveItem(id: dragged.id, toIndex: targetIndex)
-                            }
-                            return true
-                        } isTargeted: { isTargeted in
-                            dragTargetItemID = isTargeted ? item.id : nil
-                        }
-                        .overlay(alignment: .top) {
-                            if dragTargetItemID == item.id {
-                                RoundedRectangle(cornerRadius: 2)
-                                    .fill(Color.accentColor)
-                                    .frame(height: 3)
-                                    .padding(.horizontal, 20)
-                                    .offset(y: -6)
-                                    .transition(.opacity)
-                            }
-                        }
+                        cardView(for: item, index: index, activeItems: activeItems)
                     }
                 }
 
@@ -278,8 +227,133 @@ struct ContentView: View {
                 Color.clear.frame(height: 80)
             }
             .padding(.top, 8)
+            .coordinateSpace(name: "reorderSpace")
         }
         .scrollDismissesKeyboard(.interactively)
+    }
+
+    // MARK: - Card View
+
+    private func cardView(for item: TodoItem, index: Int, activeItems: [TodoItem]) -> some View {
+        let isDragging = reorderDraggingID == item.id
+
+        return HStack(spacing: 0) {
+            activeRowContent(item: item)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            if editingItemID != item.id {
+                Image(systemName: "line.3.horizontal")
+                    .font(.subheadline)
+                    .foregroundStyle(.tertiary)
+                    .padding(.horizontal, 12)
+                    .frame(maxHeight: .infinity)
+                    .contentShape(Rectangle())
+                    .gesture(
+                        LongPressGesture(minimumDuration: 0.3)
+                            .sequenced(before: DragGesture(coordinateSpace: .named("reorderSpace")))
+                            .onChanged { value in
+                                switch value {
+                                case .second(true, let drag):
+                                    if reorderDraggingID == nil {
+                                        reorderDraggingID = item.id
+                                        reorderCurrentIndex = index
+                                    }
+                                    if let drag = drag {
+                                        updateReorderPosition(dragY: drag.location.y, activeItems: activeItems)
+                                    }
+                                default:
+                                    break
+                                }
+                            }
+                            .onEnded { _ in
+                                finishReorder(activeItems: activeItems)
+                            }
+                    )
+            }
+        }
+        .padding(.leading, 16)
+        .padding(.trailing, editingItemID == item.id ? 16 : 4)
+        .padding(.vertical, 12)
+        .glassEffect(in: .rect(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.accentColor.opacity(
+                    highlightedItemID == item.id && highlightVisible ? 0.2 : 0
+                ))
+                .animation(.easeOut(duration: 1.5), value: highlightVisible)
+                .allowsHitTesting(false)
+        )
+        .opacity(isDragging ? 0.5 : 1.0)
+        .padding(.horizontal)
+        .background(
+            GeometryReader { geo in
+                Color.clear
+                    .onAppear {
+                        cardFrames[item.id] = geo.frame(in: .named("reorderSpace"))
+                    }
+                    .onChange(of: geo.frame(in: .named("reorderSpace"))) { _, frame in
+                        cardFrames[item.id] = frame
+                    }
+            }
+        )
+        .overlay(alignment: .top) {
+            if let targetIndex = reorderCurrentIndex,
+               reorderDraggingID != nil,
+               reorderDraggingID != item.id,
+               targetIndex == index {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.accentColor)
+                    .frame(height: 3)
+                    .padding(.horizontal, 20)
+                    .offset(y: -6)
+                    .allowsHitTesting(false)
+            }
+        }
+    }
+
+    private func updateReorderPosition(dragY: CGFloat, activeItems: [TodoItem]) {
+        guard let draggedID = reorderDraggingID else { return }
+
+        // Determine the target index by comparing the drag position against
+        // the midpoints of all non-dragged cards. This gives us an index in
+        // the original activeItems array (which still includes the dragged item).
+        var newIndex: Int? = nil
+        for (i, item) in activeItems.enumerated() {
+            guard item.id != draggedID, let frame = cardFrames[item.id] else { continue }
+            if dragY < frame.midY {
+                newIndex = i
+                break
+            }
+        }
+
+        // If below all non-dragged items, target the last position
+        if newIndex == nil {
+            newIndex = activeItems.count - 1
+        }
+
+        if let idx = newIndex, reorderCurrentIndex != idx {
+            reorderCurrentIndex = idx
+        }
+    }
+
+    private func finishReorder(activeItems: [TodoItem]) {
+        guard let draggedID = reorderDraggingID,
+              let targetIndex = reorderCurrentIndex,
+              let sourceIndex = activeItems.firstIndex(where: { $0.id == draggedID }),
+              sourceIndex != targetIndex else {
+            reorderDraggingID = nil
+            reorderCurrentIndex = nil
+            return
+        }
+        withAnimation(.easeInOut(duration: 0.3)) {
+            // move(fromOffsets:toOffset:) expects a toOffset in the original array.
+            // When moving down, the dragged item is removed first which shifts
+            // indices below it up by one, so we add 1 to compensate.
+            let destination = targetIndex > sourceIndex ? targetIndex + 1 : targetIndex
+            store.moveActive(from: IndexSet(integer: sourceIndex), to: destination)
+        }
+        reorderDraggingID = nil
+        reorderCurrentIndex = nil
     }
 
     // MARK: - Archived Section
@@ -452,7 +526,12 @@ struct ContentView: View {
             TextField("New item...", text: $newItemTitle)
                 .textFieldStyle(.plain)
                 .focused($isTextFieldFocused)
-                .onSubmit(addItem)
+                .onSubmit {
+                    addItem()
+                    DispatchQueue.main.async {
+                        isTextFieldFocused = true
+                    }
+                }
                 .onChange(of: isTextFieldFocused) { _, focused in
                     if focused { commitEdit() }
                 }
