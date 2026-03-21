@@ -26,8 +26,8 @@ struct ContentView: View {
     @State private var showCSVImporter: Bool = false
     @State private var editingItemID: UUID?
     @State private var editingItemTitle: String = ""
-    @FocusState private var isTextFieldFocused: Bool
-    @FocusState private var isEditingFocused: Bool
+    @State private var isTextFieldFocused: Bool = false
+    @State private var isEditingFocused: Bool = false
     @State private var isInsertingNewItem: Bool = false
     @State private var collapsingItemIDs: Set<UUID> = []
     @State private var isHandlingDeepLink: Bool = false
@@ -38,27 +38,33 @@ struct ContentView: View {
     @State private var scrollViewFrame: CGRect = .zero
     @State private var contentOriginY: CGFloat = 0
     @State private var autoScrollDirection: Int = 0
-    
+    @State private var listToDelete: UUID?
+    @State private var keyboardHolderActive: Bool = false
 
     var body: some View {
         NavigationStack {
-            TabView(selection: $store.selectedListID) {
-                ForEach(store.lists) { list in
-                    ZStack(alignment: .bottom) {
-                        todoList(for: list)
+            ZStack(alignment: .bottom) {
+                Color.clear
 
-                        inputBar
+                KeyboardHolder(isActive: $keyboardHolderActive)
+                    .frame(width: 0, height: 0)
+
+                TabView(selection: $store.selectedListID) {
+                    ForEach(store.lists) { list in
+                        todoList(for: list)
+                            .onTapGesture {
+                                isTextFieldFocused = false
+                                isEditingFocused = false
+                                commitEdit()
+                            }
+                            .tag(list.id)
                     }
-                    .background(Color(.systemGroupedBackground).ignoresSafeArea())
-                    .onTapGesture {
-                        isTextFieldFocused = false
-                        isEditingFocused = false
-                        commitEdit()
-                    }
-                    .tag(list.id)
                 }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+
+                inputBar
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+            .background(Color.clear)
             .navigationTitle(store.selectedList.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
@@ -229,9 +235,8 @@ struct ContentView: View {
                         archivedSectionView(items: archivedItems)
                     }
 
-                    Color.clear.frame(height: 80)
+                    Color.clear.frame(height: 60)
                 }
-                .padding(.top, 8)
                 .coordinateSpace(name: "reorderSpace")
                 .background(
                     GeometryReader { geo in
@@ -245,7 +250,10 @@ struct ContentView: View {
                     }
                 )
             }
+            .contentMargins(.top, 8)
             .scrollDismissesKeyboard(.interactively)
+            .scrollContentBackground(.hidden)
+            .background(Color.clear)
             .background(
                 GeometryReader { geo in
                     Color.clear
@@ -271,7 +279,7 @@ struct ContentView: View {
 
             if editingItemID != item.id {
                 Image(systemName: "line.3.horizontal")
-                    .font(.subheadline)
+                    .font(.body)
                     .foregroundStyle(.tertiary)
                     .padding(.horizontal, 12)
                     .frame(maxHeight: .infinity)
@@ -488,26 +496,36 @@ struct ContentView: View {
             .buttonStyle(.plain)
 
             if editingItemID == item.id {
-                TextField("Item name", text: $editingItemTitle)
-                    .textFieldStyle(.plain)
-                    .focused($isEditingFocused)
-                    .onSubmit {
+                NonResigningTextField(
+                    placeholder: "Item name",
+                    text: $editingItemTitle,
+                    isFocused: $isEditingFocused,
+                    onReturn: {
                         let currentID = editingItemID
                         let wasEmpty = editingItemTitle.trimmingCharacters(in: .whitespaces).isEmpty
                         isInsertingNewItem = !wasEmpty
+                        if !wasEmpty {
+                            // Transfer focus to hidden holder before the current text field is destroyed
+                            keyboardHolderActive = true
+                            isEditingFocused = false
+                        }
                         commitEdit()
                         if !wasEmpty, let currentID {
                             let newID = withAnimation { store.insertItem(after: currentID) }
                             editingItemID = newID
                             editingItemTitle = ""
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                keyboardHolderActive = false
                                 isEditingFocused = true
                                 isInsertingNewItem = false
                             }
                         } else {
+                            isEditingFocused = false
                             isInsertingNewItem = false
                         }
                     }
+                )
+                .fixedSize(horizontal: false, vertical: true)
 
                 Button {
                     isEditingFocused = false
@@ -615,20 +633,23 @@ struct ContentView: View {
 
     private var inputBar: some View {
         HStack(spacing: 10) {
-            TextField("New item...", text: $newItemTitle)
-                .textFieldStyle(.plain)
-                .focused($isTextFieldFocused)
-                .onSubmit {
+            NonResigningTextField(
+                placeholder: "New item...",
+                text: $newItemTitle,
+                isFocused: $isTextFieldFocused,
+                onReturn: {
                     addItem()
-                    DispatchQueue.main.async {
-                        isTextFieldFocused = true
-                    }
                 }
-                .onChange(of: isTextFieldFocused) { _, focused in
-                    if focused { commitEdit() }
-                }
+            )
+            .fixedSize(horizontal: false, vertical: true)
+            .onChange(of: isTextFieldFocused) { _, focused in
+                if focused { commitEdit() }
+            }
 
-            Button(action: addItem) {
+            Button {
+                addItem()
+                isTextFieldFocused = false
+            } label: {
                 Image(systemName: "plus")
                     .fontWeight(.semibold)
             }
@@ -666,12 +687,19 @@ struct ContentView: View {
                             }
                         }
                     }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        if !list.isDefault {
+                            Button(role: .destructive) {
+                                listToDelete = list.id
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    }
                     .contextMenu {
                         if !list.isDefault {
                             Button(role: .destructive) {
-                                withAnimation {
-                                    store.deleteList(id: list.id)
-                                }
+                                listToDelete = list.id
                             } label: {
                                 Label("Delete List", systemImage: "trash")
                             }
@@ -683,8 +711,29 @@ struct ContentView: View {
                 }
             }
             .environment(\.editMode, .constant(.active))
+            .listStyle(.insetGrouped)
+            .deleteDisabled(true)
             .navigationTitle("Lists")
             .navigationBarTitleDisplayMode(.inline)
+            .confirmationDialog(
+                "Delete this list?",
+                isPresented: Binding(
+                    get: { listToDelete != nil },
+                    set: { if !$0 { listToDelete = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    if let id = listToDelete {
+                        withAnimation {
+                            store.deleteList(id: id)
+                        }
+                        listToDelete = nil
+                    }
+                }
+            } message: {
+                Text("This will permanently delete the list and all its items.")
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
@@ -1052,6 +1101,95 @@ struct NewListSheet: View {
             }
         }
         .presentationDetents([.medium])
+    }
+}
+
+/// A UITextField wrapper that fires `onReturn` without dismissing the keyboard.
+struct NonResigningTextField: UIViewRepresentable {
+    var placeholder: String
+    @Binding var text: String
+    @Binding var isFocused: Bool
+    var onReturn: () -> Void
+
+    func makeUIView(context: Context) -> UITextField {
+        let tf = UITextField()
+        tf.placeholder = placeholder
+        tf.delegate = context.coordinator
+        tf.font = .preferredFont(forTextStyle: .body)
+        tf.adjustsFontForContentSizeCategory = true
+        tf.returnKeyType = .default
+        tf.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        tf.setContentHuggingPriority(.required, for: .vertical)
+        tf.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        tf.setContentCompressionResistancePriority(.required, for: .vertical)
+        tf.addTarget(context.coordinator, action: #selector(Coordinator.textChanged(_:)), for: .editingChanged)
+        return tf
+    }
+
+    func updateUIView(_ tf: UITextField, context: Context) {
+        if tf.text != text {
+            tf.text = text
+        }
+        tf.placeholder = placeholder
+
+        if isFocused && !tf.isFirstResponder {
+            // Use async to avoid UIKit layout warnings
+            DispatchQueue.main.async { tf.becomeFirstResponder() }
+        } else if !isFocused && tf.isFirstResponder {
+            tf.resignFirstResponder()
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, UITextFieldDelegate {
+        var parent: NonResigningTextField
+
+        init(_ parent: NonResigningTextField) {
+            self.parent = parent
+        }
+
+        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+            parent.onReturn()
+            return false
+        }
+
+        @objc func textChanged(_ textField: UITextField) {
+            parent.text = textField.text ?? ""
+        }
+
+        func textFieldDidBeginEditing(_ textField: UITextField) {
+            parent.isFocused = true
+        }
+
+        func textFieldDidEndEditing(_ textField: UITextField) {
+            parent.isFocused = false
+        }
+    }
+}
+
+/// An invisible UITextField that can temporarily hold first responder to keep
+/// the keyboard alive while swapping between visible text fields.
+struct KeyboardHolder: UIViewRepresentable {
+    @Binding var isActive: Bool
+
+    func makeUIView(context: Context) -> UITextField {
+        let tf = UITextField()
+        tf.alpha = 0
+        tf.isUserInteractionEnabled = false
+        return tf
+    }
+
+    func updateUIView(_ tf: UITextField, context: Context) {
+        if isActive && !tf.isFirstResponder {
+            tf.isUserInteractionEnabled = true
+            tf.becomeFirstResponder()
+        } else if !isActive && tf.isFirstResponder {
+            tf.resignFirstResponder()
+            tf.isUserInteractionEnabled = false
+        }
     }
 }
 
