@@ -331,6 +331,52 @@ struct ContentView: View {
         .padding(.trailing, editingItemID == item.id ? 16 : 4)
         .padding(.vertical, 12)
         .glassEffect(in: .rect(cornerRadius: 14))
+        .contentShape(.interaction, Rectangle())
+        .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 14))
+        .contextMenu {
+            let otherLists = store.lists.filter { $0.id != store.selectedListID }
+            Button {
+                withAnimation {
+                    store.moveActiveItemToStart(id: item.id)
+                }
+            } label: {
+                Label("Move to Top", systemImage: "arrow.up.to.line")
+            }
+            Button {
+                withAnimation {
+                    store.moveActiveItemToEnd(id: item.id)
+                }
+            } label: {
+                Label("Move to Bottom", systemImage: "arrow.down.to.line")
+            }
+            if !otherLists.isEmpty {
+                Menu {
+                    ForEach(otherLists) { list in
+                        Button {
+                            withAnimation {
+                                store.moveItem(id: item.id, toList: list.id)
+                            }
+                        } label: {
+                            Label(list.name, systemImage: "folder")
+                        }
+                    }
+                } label: {
+                    Label("Move to List", systemImage: "arrow.right.doc.on.clipboard")
+                }
+            }
+            Button {
+                UIPasteboard.general.string = item.title
+            } label: {
+                Label("Copy", systemImage: "doc.on.doc")
+            }
+            Button(role: .destructive) {
+                withAnimation {
+                    store.deleteItem(id: item.id)
+                }
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
         .overlay(
             RoundedRectangle(cornerRadius: 14)
                 .fill(Color.accentColor.opacity(
@@ -557,11 +603,19 @@ struct ContentView: View {
                 }
                 .buttonStyle(.plain)
             } else {
-                Text(item.title)
-                    .strikethrough(item.isCompleted)
-                    .foregroundStyle(item.isCompleted ? .secondary : .primary)
-
-                Spacer()
+                Button {
+                    guard editingItemID != item.id else { return }
+                    commitEdit()
+                    editingItemID = item.id
+                    editingItemTitle = item.title
+                    isEditingFocused = true
+                } label: {
+                    Text(item.title)
+                        .strikethrough(item.isCompleted)
+                        .foregroundStyle(item.isCompleted ? .secondary : .primary)
+                    Spacer()
+                }
+                .buttonStyle(.plain)
             }
         }
 
@@ -583,62 +637,9 @@ struct ContentView: View {
             .buttonStyle(.plain)
 
             textContent
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    guard editingItemID != item.id else { return }
-                    commitEdit()
-                    editingItemID = item.id
-                    editingItemTitle = item.title
-                    isEditingFocused = true
-                }
         }
 
-        let otherLists = store.lists.filter { $0.id != store.selectedListID }
-
         row
-            .contextMenu {
-                Button {
-                    withAnimation {
-                        store.moveActiveItemToStart(id: item.id)
-                    }
-                } label: {
-                    Label("Move to Top", systemImage: "arrow.up.to.line")
-                }
-                Button {
-                    withAnimation {
-                        store.moveActiveItemToEnd(id: item.id)
-                    }
-                } label: {
-                    Label("Move to Bottom", systemImage: "arrow.down.to.line")
-                }
-                if !otherLists.isEmpty {
-                    Menu {
-                        ForEach(otherLists) { list in
-                            Button {
-                                withAnimation {
-                                    store.moveItem(id: item.id, toList: list.id)
-                                }
-                            } label: {
-                                Label(list.name, systemImage: "folder")
-                            }
-                        }
-                    } label: {
-                        Label("Move to List", systemImage: "arrow.right.doc.on.clipboard")
-                    }
-                }
-                Button {
-                    UIPasteboard.general.string = item.title
-                } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
-                }
-                Button(role: .destructive) {
-                    withAnimation {
-                        store.deleteItem(id: item.id)
-                    }
-                } label: {
-                    Label("Delete", systemImage: "trash")
-                }
-            }
     }
 
     private func archivedRow(item: TodoItem) -> some View {
