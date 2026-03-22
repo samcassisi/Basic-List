@@ -26,4 +26,4 @@ An open-source, minimal to-do list app for iOS built with SwiftUI.
 
 ## License
 
-This project is open source. See [LICENSE](LICENSE) for details.
+This project is open source. See [LICENSE](https://www.gnu.org/licenses/gpl-3.0.md) for details.
