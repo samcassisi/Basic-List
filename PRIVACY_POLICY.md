@@ -1,20 +1,20 @@
 # Privacy Policy
 
-**Basic List**
+**Fable**
 
 *Last updated: March 22, 2026*
 
 ## Overview
 
-Basic List is a simple to-do list app. Your privacy is important to us.
+Fable is a simple to-do list app. Your privacy is important to us.
 
 ## Data Collection
 
-Basic List does **not** collect, store, transmit, or share any personal information or data. All your lists and to-do items are stored locally on your device.
+Fable does **not** collect, store, transmit, or share any personal information or data. All your lists and to-do items are stored locally on your device.
 
 ## Third-Party Services
 
-Basic List does not use any third-party analytics, advertising, or tracking services.
+Fable does not use any third-party analytics, advertising, or tracking services.
 
 ## Data Storage
 

@@ -1,4 +1,4 @@
-# Basic List
+# Fable
 
 An open-source, minimal to-do list app for iOS built with SwiftUI.
 
@@ -21,7 +21,7 @@ An open-source, minimal to-do list app for iOS built with SwiftUI.
 ## Getting Started
 
 1. Clone the repository.
-2. Open `Basic List.xcodeproj` in Xcode.
+2. Open `Fable.xcodeproj` in Xcode.
 3. Build and run on a simulator or device.
 
 ## License
