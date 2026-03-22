@@ -586,6 +586,11 @@ struct ContentView: View {
                         Label("Move to List", systemImage: "arrow.right.doc.on.clipboard")
                     }
                 }
+                Button {
+                    UIPasteboard.general.string = item.title
+                } label: {
+                    Label("Copy", systemImage: "doc.on.doc")
+                }
                 Button(role: .destructive) {
                     withAnimation {
                         store.deleteItem(id: item.id)
@@ -772,7 +777,10 @@ struct ContentView: View {
                             .textFieldStyle(.plain)
                             .onSubmit(renameCurrentList)
 
-                        Button(action: renameCurrentList) {
+                        Button {
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                            renameCurrentList()
+                        } label: {
                             Image(systemName: "checkmark")
                                 .fontWeight(.semibold)
                         }
@@ -929,7 +937,6 @@ struct ContentView: View {
         let trimmed = renameListName.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
         store.renameList(id: store.selectedListID, to: trimmed)
-        showListSettings = false
     }
 
     private func resumeArchiveTimers() {
