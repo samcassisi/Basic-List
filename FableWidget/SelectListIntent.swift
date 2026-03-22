@@ -1,6 +1,6 @@
 //
 //  SelectListIntent.swift
-//  BasicListWidget
+//  FableWidget
 //
 //  Created by Sam Cassisi on 28/2/2026.
 //

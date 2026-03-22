@@ -1,6 +1,6 @@
 //
-//  BasicListWidgetBundle.swift
-//  BasicListWidget
+//  FableWidgetBundle.swift
+//  FableWidget
 //
 //  Created by Sam Cassisi on 28/2/2026.
 //
@@ -9,8 +9,8 @@ import WidgetKit
 import SwiftUI
 
 @main
-struct BasicListWidgetBundle: WidgetBundle {
+struct FableWidgetBundle: WidgetBundle {
     var body: some Widget {
-        BasicListWidget()
+        FableWidget()
     }
 }

@@ -17,9 +17,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D0143F292F52BD990079E367"
-               BuildableName = "BasicListWidgetExtension.appex"
-               BlueprintName = "BasicListWidgetExtension"
-               ReferencedContainer = "container:Basic List.xcodeproj">
+               BuildableName = "FableWidgetExtension.appex"
+               BlueprintName = "FableWidgetExtension"
+               ReferencedContainer = "container:Fable.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -31,9 +31,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D0143F0B2F529FB40079E367"
-               BuildableName = "Basic List.app"
-               BlueprintName = "Basic List"
-               ReferencedContainer = "container:Basic List.xcodeproj">
+               BuildableName = "Fable.app"
+               BlueprintName = "Fable"
+               ReferencedContainer = "container:Fable.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -63,18 +63,18 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D0143F292F52BD990079E367"
-            BuildableName = "BasicListWidgetExtension.appex"
-            BlueprintName = "BasicListWidgetExtension"
-            ReferencedContainer = "container:Basic List.xcodeproj">
+            BuildableName = "FableWidgetExtension.appex"
+            BlueprintName = "FableWidgetExtension"
+            ReferencedContainer = "container:Fable.xcodeproj">
          </BuildableReference>
       </RemoteRunnable>
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D0143F0B2F529FB40079E367"
-            BuildableName = "Basic List.app"
-            BlueprintName = "Basic List"
-            ReferencedContainer = "container:Basic List.xcodeproj">
+            BuildableName = "Fable.app"
+            BlueprintName = "Fable"
+            ReferencedContainer = "container:Fable.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <EnvironmentVariables>
@@ -113,9 +113,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D0143F0B2F529FB40079E367"
-            BuildableName = "Basic List.app"
-            BlueprintName = "Basic List"
-            ReferencedContainer = "container:Basic List.xcodeproj">
+            BuildableName = "Fable.app"
+            BlueprintName = "Fable"
+            ReferencedContainer = "container:Fable.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

@@ -1,5 +1,5 @@
 //
-//  Basic_ListApp.swift
+//  FableApp.swift
 //  Fable
 //
 //  Created by Sam Cassisi on 28/2/2026.
@@ -24,12 +24,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 }
 
 @main
-struct Basic_ListApp: App {
+struct FableApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var store = TodoStore.shared
 
     init() {
-        BasicListShortcutsProvider.updateAppShortcutParameters()
+        FableShortcutsProvider.updateAppShortcutParameters()
         TodoStore.shared.purgeOldArchivedItems()
     }
 

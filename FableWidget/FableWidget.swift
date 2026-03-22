@@ -1,6 +1,6 @@
 //
-//  BasicListWidget.swift
-//  BasicListWidget
+//  FableWidget.swift
+//  FableWidget
 //
 //  Created by Sam Cassisi on 28/2/2026.
 //
@@ -75,7 +75,7 @@ struct TodoWidgetRowView: View {
             .buttonStyle(.plain)
             .invalidatableContent()
 
-            Link(destination: URL(string: "basiclist://item/\(listID.uuidString)/\(item.id.uuidString)")!) {
+            Link(destination: URL(string: "fable://item/\(listID.uuidString)/\(item.id.uuidString)")!) {
                 HStack {
                     Text(item.title)
                         .font(.system(size: 15))
@@ -139,7 +139,7 @@ struct AccessoryInlineView: View {
 
 // MARK: - Main Entry View
 
-struct BasicListWidgetEntryView: View {
+struct FableWidgetEntryView: View {
     @Environment(\.widgetFamily) var family
     @Environment(\.showsWidgetContainerBackground) var showsBackground
     var entry: TodoEntry
@@ -153,10 +153,10 @@ struct BasicListWidgetEntryView: View {
             switch family {
             case .accessoryRectangular:
                 AccessoryRectangularView(entry: entry, remainingCount: remainingCount)
-                    .widgetURL(URL(string: "basiclist://list/\(entry.listID.uuidString)"))
+                    .widgetURL(URL(string: "fable://list/\(entry.listID.uuidString)"))
             case .accessoryInline:
                 AccessoryInlineView(entry: entry)
-                    .widgetURL(URL(string: "basiclist://list/\(entry.listID.uuidString)"))
+                    .widgetURL(URL(string: "fable://list/\(entry.listID.uuidString)"))
             default:
                 systemWidgetBody
             }
@@ -178,7 +178,7 @@ struct BasicListWidgetEntryView: View {
                     .font(.title3.bold())
                 Spacer()
                 if showsBackground {
-                    Link(destination: URL(string: "basiclist://new/\(entry.listID.uuidString)")!) {
+                    Link(destination: URL(string: "fable://new/\(entry.listID.uuidString)")!) {
                         Image(systemName: "plus.circle.fill")
                             .font(.title2)
                             .foregroundStyle(.blue)
@@ -203,16 +203,16 @@ struct BasicListWidgetEntryView: View {
                 Spacer(minLength: 0)
             }
         }
-        .widgetURL(URL(string: "basiclist://list/\(entry.listID.uuidString)"))
+        .widgetURL(URL(string: "fable://list/\(entry.listID.uuidString)"))
     }
 }
 
-struct BasicListWidget: Widget {
-    let kind: String = "BasicListWidget"
+struct FableWidget: Widget {
+    let kind: String = "FableWidget"
 
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: SelectListIntent.self, provider: TodoProvider()) { entry in
-            BasicListWidgetEntryView(entry: entry)
+            FableWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("To Do List")
         .description("View and check off your to-do items.")
@@ -224,7 +224,7 @@ struct BasicListWidget: Widget {
 }
 
 #Preview("Small", as: .systemSmall) {
-    BasicListWidget()
+    FableWidget()
 } timeline: {
     TodoEntry(date: .now, items: [
         TodoItem(title: "Buy groceries"),
@@ -235,7 +235,7 @@ struct BasicListWidget: Widget {
 }
 
 #Preview("Medium", as: .systemMedium) {
-    BasicListWidget()
+    FableWidget()
 } timeline: {
     TodoEntry(date: .now, items: [
         TodoItem(title: "Buy groceries"),
@@ -246,12 +246,12 @@ struct BasicListWidget: Widget {
 }
 
 #Preview("Large", as: .systemLarge) {
-    BasicListWidget()
+    FableWidget()
 } timeline: {
     TodoEntry(date: .now, items: (1...20).map { TodoItem(title: "Task \($0)") }, listName: "To Do", listID: TodoList.defaultID)
 }
 #Preview("Rectangular", as: .accessoryRectangular) {
-    BasicListWidget()
+    FableWidget()
 } timeline: {
     TodoEntry(date: .now, items: [
         TodoItem(title: "Buy groceries"),
@@ -262,7 +262,7 @@ struct BasicListWidget: Widget {
 }
 
 #Preview("Inline", as: .accessoryInline) {
-    BasicListWidget()
+    FableWidget()
 } timeline: {
     TodoEntry(date: .now, items: [
         TodoItem(title: "Buy groceries"),

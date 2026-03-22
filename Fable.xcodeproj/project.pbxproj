@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		D0143F2D2F52BD9A0079E367 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D0143F2C2F52BD990079E367 /* WidgetKit.framework */; };
 		D0143F2F2F52BD9A0079E367 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D0143F2E2F52BD9A0079E367 /* SwiftUI.framework */; };
-		D0143F3E2F52BD9C0079E367 /* BasicListWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D0143F2A2F52BD990079E367 /* BasicListWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D0143F3E2F52BD9C0079E367 /* FableWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D0143F2A2F52BD990079E367 /* FableWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,7 +29,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				D0143F3E2F52BD9C0079E367 /* BasicListWidgetExtension.appex in Embed Foundation Extensions */,
+				D0143F3E2F52BD9C0079E367 /* FableWidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -37,25 +37,22 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		D0143F0C2F529FB40079E367 /* Basic List.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Basic List.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		D0143F232F52BB440079E367 /* ToggleTodoIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleTodoIntent.swift; sourceTree = "<group>"; };
-		D0143F242F52BB450079E367 /* BasicListWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasicListWidget.swift; sourceTree = "<group>"; };
-		D0143F252F52BB4A0079E367 /* BasicListWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasicListWidgetBundle.swift; sourceTree = "<group>"; };
-		D0143F2A2F52BD990079E367 /* BasicListWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BasicListWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D0143F0C2F529FB40079E367 /* Fable.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Fable.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D0143F2A2F52BD990079E367 /* FableWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FableWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D0143F2C2F52BD990079E367 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		D0143F2E2F52BD9A0079E367 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		D0143F472F52BE790079E367 /* BasicListWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BasicListWidgetExtension.entitlements; sourceTree = "<group>"; };
+		D0143F472F52BE790079E367 /* FableWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FableWidgetExtension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		D0143F3F2F52BD9C0079E367 /* Exceptions for "BasicListWidget" folder in "BasicListWidgetExtension" target */ = {
+		D0143F3F2F52BD9C0079E367 /* Exceptions for "FableWidget" folder in "FableWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = D0143F292F52BD990079E367 /* BasicListWidgetExtension */;
+			target = D0143F292F52BD990079E367 /* FableWidgetExtension */;
 		};
-		D0143F4B2F52C0AC0079E367 /* Exceptions for "Basic List" folder in "BasicListWidgetExtension" target */ = {
+		D0143F4B2F52C0AC0079E367 /* Exceptions for "Fable" folder in "FableWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				AddItemIntent.swift,
@@ -64,33 +61,33 @@
 				TodoList.swift,
 				TodoStore.swift,
 			);
-			target = D0143F292F52BD990079E367 /* BasicListWidgetExtension */;
+			target = D0143F292F52BD990079E367 /* FableWidgetExtension */;
 		};
-		D0143F4E2F52C0D70079E367 /* Exceptions for "BasicListWidget" folder in "Basic List" target */ = {
+		D0143F4E2F52C0D70079E367 /* Exceptions for "FableWidget" folder in "Fable" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				ToggleTodoIntent.swift,
 			);
-			target = D0143F0B2F529FB40079E367 /* Basic List */;
+			target = D0143F0B2F529FB40079E367 /* Fable */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		D0143F0E2F529FB40079E367 /* Basic List */ = {
+		D0143F0E2F529FB40079E367 /* Fable */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				D0143F4B2F52C0AC0079E367 /* Exceptions for "Basic List" folder in "BasicListWidgetExtension" target */,
+				D0143F4B2F52C0AC0079E367 /* Exceptions for "Fable" folder in "FableWidgetExtension" target */,
 			);
-			path = "Basic List";
+			path = Fable;
 			sourceTree = "<group>";
 		};
-		D0143F302F52BD9A0079E367 /* BasicListWidget */ = {
+		D0143F302F52BD9A0079E367 /* FableWidget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				D0143F4E2F52C0D70079E367 /* Exceptions for "BasicListWidget" folder in "Basic List" target */,
-				D0143F3F2F52BD9C0079E367 /* Exceptions for "BasicListWidget" folder in "BasicListWidgetExtension" target */,
+				D0143F4E2F52C0D70079E367 /* Exceptions for "FableWidget" folder in "Fable" target */,
+				D0143F3F2F52BD9C0079E367 /* Exceptions for "FableWidget" folder in "FableWidgetExtension" target */,
 			);
-			path = BasicListWidget;
+			path = FableWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -118,32 +115,21 @@
 		D0143F032F529FB40079E367 = {
 			isa = PBXGroup;
 			children = (
-				D0143F472F52BE790079E367 /* BasicListWidgetExtension.entitlements */,
-				D0143F0E2F529FB40079E367 /* Basic List */,
-				D0143F302F52BD9A0079E367 /* BasicListWidget */,
+				D0143F472F52BE790079E367 /* FableWidgetExtension.entitlements */,
+				D0143F0E2F529FB40079E367 /* Fable */,
+				D0143F302F52BD9A0079E367 /* FableWidget */,
 				D0143F2B2F52BD990079E367 /* Frameworks */,
 				D0143F0D2F529FB40079E367 /* Products */,
-				D0143F222F52BB260079E367 /* BasicListWidget */,
 			);
 			sourceTree = "<group>";
 		};
 		D0143F0D2F529FB40079E367 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D0143F0C2F529FB40079E367 /* Basic List.app */,
-				D0143F2A2F52BD990079E367 /* BasicListWidgetExtension.appex */,
+				D0143F0C2F529FB40079E367 /* Fable.app */,
+				D0143F2A2F52BD990079E367 /* FableWidgetExtension.appex */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		D0143F222F52BB260079E367 /* BasicListWidget */ = {
-			isa = PBXGroup;
-			children = (
-				D0143F232F52BB440079E367 /* ToggleTodoIntent.swift */,
-				D0143F242F52BB450079E367 /* BasicListWidget.swift */,
-				D0143F252F52BB4A0079E367 /* BasicListWidgetBundle.swift */,
-			);
-			path = BasicListWidget;
 			sourceTree = "<group>";
 		};
 		D0143F2B2F52BD990079E367 /* Frameworks */ = {
@@ -158,9 +144,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		D0143F0B2F529FB40079E367 /* Basic List */ = {
+		D0143F0B2F529FB40079E367 /* Fable */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D0143F172F529FB50079E367 /* Build configuration list for PBXNativeTarget "Basic List" */;
+			buildConfigurationList = D0143F172F529FB50079E367 /* Build configuration list for PBXNativeTarget "Fable" */;
 			buildPhases = (
 				D0143F082F529FB40079E367 /* Sources */,
 				D0143F092F529FB40079E367 /* Frameworks */,
@@ -173,18 +159,18 @@
 				D0143F3D2F52BD9C0079E367 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				D0143F0E2F529FB40079E367 /* Basic List */,
+				D0143F0E2F529FB40079E367 /* Fable */,
 			);
-			name = "Basic List";
+			name = Fable;
 			packageProductDependencies = (
 			);
 			productName = "Basic List";
-			productReference = D0143F0C2F529FB40079E367 /* Basic List.app */;
+			productReference = D0143F0C2F529FB40079E367 /* Fable.app */;
 			productType = "com.apple.product-type.application";
 		};
-		D0143F292F52BD990079E367 /* BasicListWidgetExtension */ = {
+		D0143F292F52BD990079E367 /* FableWidgetExtension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D0143F402F52BD9C0079E367 /* Build configuration list for PBXNativeTarget "BasicListWidgetExtension" */;
+			buildConfigurationList = D0143F402F52BD9C0079E367 /* Build configuration list for PBXNativeTarget "FableWidgetExtension" */;
 			buildPhases = (
 				D0143F262F52BD990079E367 /* Sources */,
 				D0143F272F52BD990079E367 /* Frameworks */,
@@ -195,13 +181,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				D0143F302F52BD9A0079E367 /* BasicListWidget */,
+				D0143F302F52BD9A0079E367 /* FableWidget */,
 			);
-			name = BasicListWidgetExtension;
+			name = FableWidgetExtension;
 			packageProductDependencies = (
 			);
 			productName = BasicListWidgetExtension;
-			productReference = D0143F2A2F52BD990079E367 /* BasicListWidgetExtension.appex */;
+			productReference = D0143F2A2F52BD990079E367 /* FableWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -222,7 +208,7 @@
 					};
 				};
 			};
-			buildConfigurationList = D0143F072F529FB40079E367 /* Build configuration list for PBXProject "Basic List" */;
+			buildConfigurationList = D0143F072F529FB40079E367 /* Build configuration list for PBXProject "Fable" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -236,8 +222,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D0143F0B2F529FB40079E367 /* Basic List */,
-				D0143F292F52BD990079E367 /* BasicListWidgetExtension */,
+				D0143F0B2F529FB40079E367 /* Fable */,
+				D0143F292F52BD990079E367 /* FableWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -279,7 +265,7 @@
 /* Begin PBXTargetDependency section */
 		D0143F3D2F52BD9C0079E367 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D0143F292F52BD990079E367 /* BasicListWidgetExtension */;
+			target = D0143F292F52BD990079E367 /* FableWidgetExtension */;
 			targetProxy = D0143F3C2F52BD9C0079E367 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -318,6 +304,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = Fable/Fable.entitlements;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = LND36R4KG8;
@@ -382,6 +369,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = Fable/Fable.entitlements;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = LND36R4KG8;
@@ -411,7 +399,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "Basic List/Basic List.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Fable/Fable.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = LND36R4KG8;
@@ -433,12 +421,16 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.samcassisi.fable;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -447,7 +439,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "Basic List/Basic List.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Fable/Fable.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = LND36R4KG8;
@@ -469,12 +461,16 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.samcassisi.fable;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -483,13 +479,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = BasicListWidgetExtension.entitlements;
+				CODE_SIGN_ENTITLEMENTS = FableWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = LND36R4KG8;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = BasicListWidget/Info.plist;
+				INFOPLIST_FILE = FableWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Fable Widget";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -503,11 +499,15 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -516,13 +516,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = BasicListWidgetExtension.entitlements;
+				CODE_SIGN_ENTITLEMENTS = FableWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = LND36R4KG8;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = BasicListWidget/Info.plist;
+				INFOPLIST_FILE = FableWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Fable Widget";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -536,18 +536,22 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		D0143F072F529FB40079E367 /* Build configuration list for PBXProject "Basic List" */ = {
+		D0143F072F529FB40079E367 /* Build configuration list for PBXProject "Fable" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D0143F152F529FB50079E367 /* Debug */,
@@ -556,7 +560,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D0143F172F529FB50079E367 /* Build configuration list for PBXNativeTarget "Basic List" */ = {
+		D0143F172F529FB50079E367 /* Build configuration list for PBXNativeTarget "Fable" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D0143F182F529FB50079E367 /* Debug */,
@@ -565,7 +569,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D0143F402F52BD9C0079E367 /* Build configuration list for PBXNativeTarget "BasicListWidgetExtension" */ = {
+		D0143F402F52BD9C0079E367 /* Build configuration list for PBXNativeTarget "FableWidgetExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D0143F412F52BD9C0079E367 /* Debug */,

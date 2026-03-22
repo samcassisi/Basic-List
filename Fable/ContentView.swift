@@ -99,7 +99,7 @@ struct ContentView: View {
                 resumeArchiveTimers()
             }
             .onOpenURL { url in
-                guard url.scheme == "basiclist" else { return }
+                guard url.scheme == "fable" else { return }
                 if url.host == "new" {
                     if let idString = url.pathComponents.dropFirst().first,
                        let uuid = UUID(uuidString: idString),
@@ -119,11 +119,11 @@ struct ContentView: View {
                     var listID: UUID?
                     var itemID: UUID?
                     if uuids.count == 2 {
-                        // basiclist://item/{listID}/{itemID}
+                        // fable://item/{listID}/{itemID}
                         listID = uuids[0]
                         itemID = uuids[1]
                     } else if let uuid = uuids.first {
-                        // basiclist://item/{itemID} (legacy)
+                        // fable://item/{itemID} (legacy)
                         itemID = uuid
                     }
                     // Find the item across all lists

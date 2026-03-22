@@ -7,7 +7,7 @@
 
 import AppIntents
 
-struct BasicListShortcutsProvider: AppShortcutsProvider {
+struct FableShortcutsProvider: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: AddItemIntent(),

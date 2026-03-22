@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D0143F0B2F529FB40079E367"
-               BuildableName = "Basic List.app"
-               BlueprintName = "Basic List"
-               ReferencedContainer = "container:Basic List.xcodeproj">
+               BuildableName = "Fable.app"
+               BlueprintName = "Fable"
+               ReferencedContainer = "container:Fable.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D0143F0B2F529FB40079E367"
-            BuildableName = "Basic List.app"
-            BlueprintName = "Basic List"
-            ReferencedContainer = "container:Basic List.xcodeproj">
+            BuildableName = "Fable.app"
+            BlueprintName = "Fable"
+            ReferencedContainer = "container:Fable.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D0143F0B2F529FB40079E367"
-            BuildableName = "Basic List.app"
-            BlueprintName = "Basic List"
-            ReferencedContainer = "container:Basic List.xcodeproj">
+            BuildableName = "Fable.app"
+            BlueprintName = "Fable"
+            ReferencedContainer = "container:Fable.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
