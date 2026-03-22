@@ -24,12 +24,20 @@ struct ListEntity: AppEntity {
     }
 }
 
-struct ListEntityQuery: EntityQuery {
+struct ListEntityQuery: EntityStringQuery {
     func entities(for identifiers: [UUID]) async throws -> [ListEntity] {
         let lists = TodoStore.loadLists()
         return identifiers.compactMap { id in
             lists.first(where: { $0.id == id }).map { ListEntity(id: $0.id, name: $0.name) }
         }
+    }
+
+    func entities(matching string: String) async throws -> [ListEntity] {
+        let lists = TodoStore.loadLists()
+        let lowercased = string.lowercased()
+        return lists
+            .filter { $0.name.lowercased().contains(lowercased) }
+            .map { ListEntity(id: $0.id, name: $0.name) }
     }
 
     func suggestedEntities() async throws -> [ListEntity] {
