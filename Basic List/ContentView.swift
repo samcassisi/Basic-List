@@ -67,15 +67,15 @@ struct ContentView: View {
                 inputBar
             }
             .background(Color.clear)
-            .navigationTitle(store.selectedList.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .principal) {
+                ToolbarItem(placement: .topBarLeading) {
                     Text(store.selectedList.name)
                         .font(.title2.bold())
-                        .frame(maxHeight: .infinity)
+                        .fixedSize()
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .topBarTrailing) {
                     trailingToolbarItems
                 }
