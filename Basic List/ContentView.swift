@@ -52,11 +52,13 @@ struct ContentView: View {
                 TabView(selection: $store.selectedListID) {
                     ForEach(store.lists) { list in
                         todoList(for: list)
-                            .onTapGesture {
-                                isTextFieldFocused = false
-                                isEditingFocused = false
-                                commitEdit()
-                            }
+                            .simultaneousGesture(
+                                TapGesture().onEnded {
+                                    isTextFieldFocused = false
+                                    isEditingFocused = false
+                                    commitEdit()
+                                }
+                            )
                             .tag(list.id)
                     }
                 }
@@ -278,35 +280,50 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if editingItemID != item.id {
-                Image(systemName: "line.3.horizontal")
-                    .font(.body)
-                    .foregroundStyle(.tertiary)
+                if item.isCompleted {
+                    Button {
+                        withAnimation {
+                            store.deleteItem(id: item.id)
+                        }
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.subheadline)
+                            .foregroundStyle(.red)
+                    }
+                    .buttonStyle(.plain)
                     .padding(.horizontal, 12)
                     .frame(maxHeight: .infinity)
-                    .contentShape(Rectangle())
-                    .gesture(
-                        LongPressGesture(minimumDuration: 0.3)
-                            .sequenced(before: DragGesture(coordinateSpace: .named("reorderSpace")))
-                            .onChanged { value in
-                                switch value {
-                                case .second(true, let drag):
-                                    if reorderDraggingID == nil {
-                                        reorderDraggingID = item.id
-                                        reorderCurrentIndex = index
+                } else {
+                    Image(systemName: "line.3.horizontal")
+                        .font(.body)
+                        .foregroundStyle(.tertiary)
+                        .padding(.horizontal, 12)
+                        .frame(maxHeight: .infinity)
+                        .contentShape(Rectangle())
+                        .gesture(
+                            LongPressGesture(minimumDuration: 0.3)
+                                .sequenced(before: DragGesture(coordinateSpace: .named("reorderSpace")))
+                                .onChanged { value in
+                                    switch value {
+                                    case .second(true, let drag):
+                                        if reorderDraggingID == nil {
+                                            reorderDraggingID = item.id
+                                            reorderCurrentIndex = index
+                                        }
+                                        if let drag = drag {
+                                            updateReorderPosition(dragY: drag.location.y, activeItems: activeItems)
+                                            let globalY = contentOriginY + drag.location.y
+                                            updateAutoScroll(globalY: globalY, activeItems: activeItems, scrollProxy: scrollProxy)
+                                        }
+                                    default:
+                                        break
                                     }
-                                    if let drag = drag {
-                                        updateReorderPosition(dragY: drag.location.y, activeItems: activeItems)
-                                        let globalY = contentOriginY + drag.location.y
-                                        updateAutoScroll(globalY: globalY, activeItems: activeItems, scrollProxy: scrollProxy)
-                                    }
-                                default:
-                                    break
                                 }
-                            }
-                            .onEnded { _ in
-                                finishReorder(activeItems: activeItems)
-                            }
-                    )
+                                .onEnded { _ in
+                                    finishReorder(activeItems: activeItems)
+                                }
+                        )
+                }
             }
         }
         .id(item.id)
@@ -348,6 +365,23 @@ struct ContentView: View {
                     .allowsHitTesting(false)
             }
         }
+        .overlay(alignment: .bottom) {
+            if let targetIndex = reorderCurrentIndex,
+               let draggingID = reorderDraggingID,
+               draggingID != item.id,
+               targetIndex == activeItems.count {
+                // Show the bottom indicator on the last non-dragged item
+                let lastNonDraggedIndex = activeItems.lastIndex(where: { $0.id != draggingID })
+                if lastNonDraggedIndex == index {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.accentColor)
+                        .frame(height: 3)
+                        .padding(.horizontal, 20)
+                        .offset(y: 6)
+                        .allowsHitTesting(false)
+                }
+            }
+        }
     }
 
     private func updateReorderPosition(dragY: CGFloat, activeItems: [TodoItem]) {
@@ -365,9 +399,10 @@ struct ContentView: View {
             }
         }
 
-        // If below all non-dragged items, target the last position
+        // If below all non-dragged items, target one past the last position
+        // (meaning "insert after the last item")
         if newIndex == nil {
-            newIndex = activeItems.count - 1
+            newIndex = activeItems.count
         }
 
         if let idx = newIndex, reorderCurrentIndex != idx {
@@ -432,10 +467,10 @@ struct ContentView: View {
             return
         }
         withAnimation(.easeInOut(duration: 0.3)) {
-            // targetIndex is the index of the item the blue line is shown above,
-            // meaning "insert before this item". move(fromOffsets:toOffset:) already
-            // accounts for the source removal when computing the final position,
-            // so we pass targetIndex directly for both directions.
+            // targetIndex is either the index of the item the blue line is shown
+            // above (meaning "insert before this item"), or activeItems.count
+            // (meaning "insert after the last item"). move(fromOffsets:toOffset:)
+            // handles both cases correctly.
             store.moveActive(from: IndexSet(integer: sourceIndex), to: targetIndex)
         }
         reorderDraggingID = nil
@@ -471,6 +506,7 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .glassEffect(in: .rect(cornerRadius: 14))
                 .padding(.horizontal)
+                .id("archived-\(item.id)")
         }
     }
 
@@ -478,23 +514,7 @@ struct ContentView: View {
 
     @ViewBuilder
     private func activeRowContent(item: TodoItem) -> some View {
-        let row = HStack(spacing: 12) {
-            Button {
-                withAnimation {
-                    store.toggleCompleted(id: item.id)
-                }
-                if store.selectedList.items.first(where: { $0.id == item.id })?.isCompleted == true {
-                    scheduleArchive(for: item.id)
-                } else {
-                    cancelArchive(for: item.id)
-                }
-            } label: {
-                Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundStyle(item.isCompleted ? .green : .secondary)
-            }
-            .buttonStyle(.plain)
-
+        let textContent = Group {
             if editingItemID == item.id {
                 NonResigningTextField(
                     placeholder: "Item name",
@@ -545,17 +565,37 @@ struct ContentView: View {
             }
         }
 
+        let row = HStack(spacing: 12) {
+            Button {
+                withAnimation {
+                    store.toggleCompleted(id: item.id)
+                }
+                if store.selectedList.items.first(where: { $0.id == item.id })?.isCompleted == true {
+                    scheduleArchive(for: item.id)
+                } else {
+                    cancelArchive(for: item.id)
+                }
+            } label: {
+                Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(item.isCompleted ? .green : .secondary)
+            }
+            .buttonStyle(.plain)
+
+            textContent
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    guard editingItemID != item.id else { return }
+                    commitEdit()
+                    editingItemID = item.id
+                    editingItemTitle = item.title
+                    isEditingFocused = true
+                }
+        }
+
         let otherLists = store.lists.filter { $0.id != store.selectedListID }
 
         row
-            .contentShape(Rectangle())
-            .onTapGesture {
-                guard editingItemID != item.id else { return }
-                commitEdit()
-                editingItemID = item.id
-                editingItemTitle = item.title
-                isEditingFocused = true
-            }
             .contextMenu {
                 Button {
                     withAnimation {

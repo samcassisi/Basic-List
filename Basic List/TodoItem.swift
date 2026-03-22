@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct TodoItem: Identifiable, Codable, Sendable {
+struct TodoItem: Identifiable, Codable, Sendable, Equatable {
     var id = UUID()
     var title: String
     var isCompleted: Bool = false
