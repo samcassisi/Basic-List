@@ -40,6 +40,7 @@ struct ContentView: View {
     @State private var autoScrollDirection: Int = 0
     @State private var listToDelete: UUID?
     @State private var keyboardHolderActive: Bool = false
+    @GestureState private var reorderGestureActive: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -55,8 +56,6 @@ struct ContentView: View {
                             .simultaneousGesture(
                                 TapGesture().onEnded {
                                     isTextFieldFocused = false
-                                    isEditingFocused = false
-                                    commitEdit()
                                 }
                             )
                             .tag(list.id)
@@ -88,6 +87,12 @@ struct ContentView: View {
                 isTextFieldFocused = false
                 isEditingFocused = false
                 commitEdit()
+                resetReorderState()
+            }
+            .onChange(of: reorderGestureActive) { _, active in
+                if !active {
+                    resetReorderState()
+                }
             }
             .onChange(of: isEditingFocused) { _, focused in
                 if !focused && !isInsertingNewItem { commitEdit() }
@@ -303,6 +308,9 @@ struct ContentView: View {
                         .gesture(
                             LongPressGesture(minimumDuration: 0.3)
                                 .sequenced(before: DragGesture(coordinateSpace: .named("reorderSpace")))
+                                .updating($reorderGestureActive) { _, state, _ in
+                                    state = true
+                                }
                                 .onChanged { value in
                                     switch value {
                                     case .second(true, let drag):
@@ -519,6 +527,12 @@ struct ContentView: View {
             // handles both cases correctly.
             store.moveActive(from: IndexSet(integer: sourceIndex), to: targetIndex)
         }
+        reorderDraggingID = nil
+        reorderCurrentIndex = nil
+    }
+
+    private func resetReorderState() {
+        stopAutoScroll()
         reorderDraggingID = nil
         reorderCurrentIndex = nil
     }
